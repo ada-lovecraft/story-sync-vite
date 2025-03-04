@@ -1,19 +1,15 @@
-Below is an in-depth, multi-tiered checklist “dev-story” tasklist that represents a collection of single-point (1-scrum point) tickets arranged in project timeline order. Each ticket is broken down into clear sub-tasks so that no part of the project is tackled before its dependencies are in place.
-
----
-
 ### 1. Project Instantiation & Setup
 
-#### - [ ] Create Project Repository & Initial Setup
+#### - [x] Create Project Repository & Initial Setup
   - [x] Initialize a new Vite typescript project using React (v19)  
-  - [ ] Install the latest (5.x) `zustand` package
-  - [ ] Install Tailwind CSS (v4) 
-    - [ ] `npm install tailwindcss @tailwindcss/vite`
-    - [ ] remove all contents of `index.css` and replace with `@import "tailwindcss";`
-  - [ ] Add custom path aliases
-    - [ ] install node types
-      - [ ] `npm install -D @types/node`
-    - [ ] in `tsconfig.json` add:
+  - [x] Install the latest (5.x) `zustand` package
+  - [x] Install Tailwind CSS (v4) 
+    - [x] `npm install tailwindcss @tailwindcss/vite`
+    - [x] remove all contents of `index.css` and replace with `@import "tailwindcss";`
+  - [x] Add custom path aliases
+    - [x] install node types
+      - [x] `npm install -D @types/node`
+    - [x] in `tsconfig.json` add:
 
       ```json
       "compilerOptions": {
@@ -23,7 +19,7 @@ Below is an in-depth, multi-tiered checklist “dev-story” tasklist that repre
         }
       }
       ```
-    - [ ] in `tsconfig.app.json` add the following to the `compilerOptions` object:
+    - [x] in `tsconfig.app.json` add the following to the `compilerOptions` object:
 
       ```json:
         "baseUrl": ".",
@@ -33,7 +29,7 @@ Below is an in-depth, multi-tiered checklist “dev-story” tasklist that repre
           ]
         }
       ```
-    - [ ] Update `vite.config.ts` to read as follows:
+    - [x] Update `vite.config.ts` to read as follows:
 
       ```typescript
       import path from "path"
@@ -53,38 +49,32 @@ Below is an in-depth, multi-tiered checklist “dev-story” tasklist that repre
       ```
 
       
-  - [ ] initialize shadcn-ui components
+  - [x] initialize shadcn-ui components
     ```shell
     npx shadcn@latest init -y -d
     ```
-  - [ ] add all available shadcn component
+  - [x] add all available shadcn component
     ```shell
     npx shadcn@latest add -a -y -o
     ```
-  - [ ] Set up the project folder structure (components, hooks, store, utils, etc.)
+  - [x] Set up the project folder structure (components, hooks, store, utils, etc.)
 
 ---
 
 ### 2. UI Layout & Application Skeleton
 
-- **[ ] Build Global Layout**  
-  - [ ] Create a responsive sidebar (for navigation or additional tools)  
-  - [ ] Build a top navbar  
-  - [ ] Define main content areas (upload area, fine-tuning view, summarization queue view)  
-  - [ ] Ensure desktop-first layout with potential for future responsive enhancements
+- **[x] Build Global Layout**  
+  - [x] Create a responsive sidebar (for navigation or additional tools)  
+  - [x] Build a top navbar  
+  - [x] Define main content areas (upload area, fine-tuning view, summarization queue view)  
+  - [x] Ensure desktop-first layout with potential for future responsive enhancements
 
 ---
 
 ### 3. State Management Setup
 
-- **[ ] Create Zustand Store**  
-  - [ ] Define global state slices for:  
-    - File upload & raw file contents  
-    - Processed file content (cleaned and formatted)  
-    - Rounds metadata (index, start/end line, line count)  
-    - Chapters (round groupings and configuration details)  
-    - Summarization queues (for rounds and chapters)  
-  - [ ] Create actions for updating and retrieving each state slice
+- **[x] Create Zustand Store**  
+  - [x] Complete the zustand store dev-story located at `docs/dev-story-create-zustand-store.md`
 
 ---
 
@@ -155,15 +145,15 @@ Below is an in-depth, multi-tiered checklist “dev-story” tasklist that repre
 
 - **[ ] Develop Round Summarization Queue UI**  
   - [ ] Create a right-hand column view displaying the round queue  
-  - [ ] Show progress indicators and summary status icons (including “failed” statuses)
+  - [ ] Show progress indicators and summary status icons (including "failed" statuses)
 
 - **[ ] Simulate Summarization Calls**  
   - [ ] Implement simulated GPT-4o summarization for rounds  
-  - [ ] Set summary status to “failed” on simulated failure  
-  - [ ] Allow user-triggered “Reroll” to reattempt summarization
+  - [ ] Set summary status to "failed" on simulated failure  
+  - [ ] Allow user-triggered "Reroll" to reattempt summarization
 
 - **[ ] Integrate Queue Management**  
-  - [ ] Ensure “Reroll” updates the queue by moving or inserting the round at the top
+  - [ ] Ensure "Reroll" updates the queue by moving or inserting the round at the top
 
 ---
 
@@ -171,11 +161,11 @@ Below is an in-depth, multi-tiered checklist “dev-story” tasklist that repre
 
 - **[ ] Build Chapter Summarization View**  
   - [ ] Present each chapter with its generated narrative outline  
-  - [ ] Exclude rounds marked as “omitted” from the summary
+  - [ ] Exclude rounds marked as "omitted" from the summary
 
 - **[ ] Simulate Chapter Summarization Calls**  
   - [ ] Process all eligible rounds in a chapter to generate a detailed outline  
-  - [ ] Provide a final “formatting” button to concatenate outlines with cohesive numbering/formatting
+  - [ ] Provide a final "formatting" button to concatenate outlines with cohesive numbering/formatting
 
 - **[ ] Final Output & Download**  
   - [ ] Display the final concatenated outline in the UI  
@@ -198,7 +188,7 @@ Below is an in-depth, multi-tiered checklist “dev-story” tasklist that repre
       ]
     }
     ```
-  - [ ] Provide a “Download Chapter Configuration” button in the fine-tuning view
+  - [ ] Provide a "Download Chapter Configuration" button in the fine-tuning view
 
 - **[ ] Implement Chapter Configuration Import**  
   - [ ] Create a drag-and-drop drop zone for JSON configuration files  
