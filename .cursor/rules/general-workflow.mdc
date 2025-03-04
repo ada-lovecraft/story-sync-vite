@@ -1,0 +1,46 @@
+---
+description: General development workflow and practices
+globs: **/*
+alwaysApply: false
+---
+# General Development Workflow
+
+## Project Requirements
+
+always check [project-requirements.md](mdc:docs/project-requirements.md) to gain an understanding of project 
+When completing work on a requirement, update [project-requirements.md](mdc:docs/project-requirements.md) and mark the completed tasks as such.
+
+
+
+## Code Change Process
+
+1. Write tests before implementing
+2. Focus on single responsibility
+3. Think step-by-step
+4. Be proactive about edge cases
+5. Gather information before acting
+   - Use `man` pages
+   - Use `--help` commands
+   - Read full documentation
+
+## Package Management
+- Use CLI tools to find latest package versions
+- Verify compatibility before adding dependencies
+- Document version requirements
+
+## Code Review Guidelines
+- Be concise
+- Be critical but constructive
+- Verify suggestions against documentation
+- Consider edge cases
+- Treat all stakeholders as domain experts
+
+## Testing Practices
+- Run tests after every code change
+- Run tests after writing new tests
+- Fix failing tests immediately
+- Write tests before implementing features
+- Focus on atomic, single-responsibility test cases
+
+## Substitutions
+- instead of `toast` component/hooks use [sonner.tsx](mdc:src/app/_components/ui/sonner.tsx)
