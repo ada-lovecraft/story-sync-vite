@@ -80,46 +80,46 @@
 
 ### 4. File Upload & Content Processing
 
-- **[ ] Implement File Upload Component**  
-  - [ ] Develop drag-and-drop file drop zone  
-  - [ ] Add fallback file selector button  
-  - [ ] Use FileReader API to read UTF-8 files (1–3MB)
+- **[x] Implement File Upload Component**  
+  - [x] Develop drag-and-drop file drop zone  
+  - [x] Add fallback file selector button  
+  - [x] Use FileReader API to read UTF-8 files (1–3MB)
 
-- **[ ] Develop Content Transformation Functions**  
-  - [ ] Replace the first occurrence of `/^You said:/` with `<user>` (or prepend if missing)  
-  - [ ] Replace subsequent occurrences of `/^You said:/` with `</dungeon_master>\n<user>`  
-  - [ ] Replace all instances of `chatGPT said:` with `</user>\n<dungeon_master>`  
-  - [ ] Ensure file starts with `<user>` and ends with `</dungeon_master>`  
-  - [ ] Remove lines matching `/\d+\/\d+/` (with no other content)  
-  - [ ] Replace multiple newlines (`\n\n\n*`) with a single double newline (`\n\n`)  
-  - [ ] Verify all pattern matching is strictly case-insensitive and enforced
+- **[x] Develop Content Transformation Functions**  
+  - [x] Replace the first occurrence of `/^You said:/` with `<user>` (or prepend if missing)  
+  - [x] Replace subsequent occurrences of `/^You said:/` with `</dungeon_master>\n<user>`  
+  - [x] Replace all instances of `chatGPT said:` with `</user>\n<dungeon_master>`  
+  - [x] Ensure file starts with `<user>` and ends with `</dungeon_master>`  
+  - [x] Remove lines matching `/\d+\/\d+/` (with no other content)  
+  - [x] Replace multiple newlines (`\n\n\n*`) with a single double newline (`\n\n`)  
+  - [x] Verify all pattern matching is strictly case-insensitive and enforced
 
-- **[ ] Integrate File Upload & Processing**  
-  - [ ] Wire the file upload component to invoke transformation functions  
-  - [ ] Store the processed content in the Zustand store
+- **[x] Integrate File Upload & Processing**  
+  - [x] Wire the file upload component to invoke transformation functions  
+  - [x] Store the processed content in the Zustand store
 
 ---
 
 ### 5. Parsing and Rounds Generation
 
-- **[ ] Parse Processed Content into Rounds**  
-  - [ ] Identify rounds as pairs of `<user>` and `<dungeon_master>` nodes  
-  - [ ] For each round, extract and record:  
+- **[x] Parse Processed Content into Rounds**  
+  - [x] Identify rounds as pairs of `<user>` and `<dungeon_master>` nodes  
+  - [x] For each round, extract and record:  
     - Round index  
     - Start line number  
     - End line number  
     - Total line count  
-  - [ ] Store round metadata (using file line number ranges) in the Zustand store
+  - [x] Store round metadata (using file line number ranges) in the Zustand store
 
 ---
 
 ### 6. Chapter Chunking Module
 
-- **[ ] Implement Chapter Formation Logic**  
-  - [ ] Group rounds sequentially until the cumulative line count reaches or exceeds 2500  
-  - [ ] Ensure rounds remain in original order  
-  - [ ] Validate that the chapter has the minimum rounds required to meet the threshold  
-  - [ ] Store chapter metadata (with round ranges) in the Zustand store
+- **[x] Implement Chapter Formation Logic**  
+  - [x] Group rounds sequentially until the cumulative line count reaches or exceeds 2500  
+  - [x] Ensure rounds remain in original order  
+  - [x] Validate that the chapter has the minimum rounds required to meet the threshold  
+  - [x] Store chapter metadata (with round ranges) in the Zustand store
 
 ---
 
