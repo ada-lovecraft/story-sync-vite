@@ -75,6 +75,7 @@ export const ChapterTable: FC<ChapterTableProps> = ({
                 </TableCell>
                 <TableCell className="text-right">
                   <RoundActionsToolbar
+                    size="xs"
                     roundIndex={round.roundIndex}
                     chapterIndex={chapterIndex}
                     isFirstChapter={isFirstChapter}

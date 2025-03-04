@@ -15,6 +15,7 @@ interface RoundActionsToolbarProps {
   onSplit: (chapterIndex: number, roundIndex: number) => void
   onOmit: (chapterIndex: number, roundIndex: number, currentOmitted: boolean) => void
   onReroll: (roundIndex: number) => void
+  size?: 'xs' | 'sm'
 }
 
 export const RoundActionsToolbar: FC<RoundActionsToolbarProps> = ({
@@ -27,25 +28,32 @@ export const RoundActionsToolbar: FC<RoundActionsToolbarProps> = ({
   onSlideDown,
   onSplit,
   onOmit,
-  onReroll
+  onReroll,
+  size = 'sm'
 }) => {
+  const isExtraSmall = size === 'xs';
+  
   return (
     <div className="flex justify-end">
       <TooltipProvider delayDuration={300}>
-        <div className="inline-flex h-6 items-center rounded-md border bg-background p-0 text-muted-foreground shadow-sm">
+        <div className={cn(
+          "inline-flex items-center rounded-md border bg-background text-muted-foreground shadow-sm",
+          isExtraSmall ? "py-1 px-0 text-xs" : "h-6 p-0"
+        )}>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  "h-6 rounded-sm px-0.5 text-xs",
+                  "rounded-sm text-xs",
+                  isExtraSmall ? "h-4 my-0 px-0.25" : "h-6 px-0.5",
                   isFirstChapter && "opacity-50 cursor-not-allowed"
                 )}
                 disabled={isFirstChapter}
                 onClick={() => onSlideUp(chapterIndex, roundIndex)}
               >
-                <ArrowUpIcon className="h-3 w-3" />
+                <ArrowUpIcon className={isExtraSmall ? "h-2.5 w-2.5" : "h-3 w-3"} />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Slide Up</TooltipContent>
@@ -57,29 +65,36 @@ export const RoundActionsToolbar: FC<RoundActionsToolbarProps> = ({
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  "h-6 rounded-sm px-0.5 text-xs",
+                  "rounded-sm text-xs",
+                  isExtraSmall ? "h-4 my-0 px-0.25" : "h-6 px-0.5",
                   isLastChapter && "opacity-50 cursor-not-allowed"
                 )}
                 disabled={isLastChapter}
                 onClick={() => onSlideDown(chapterIndex, roundIndex)}
               >
-                <ArrowDownIcon className="h-3 w-3" />
+                <ArrowDownIcon className={isExtraSmall ? "h-2.5 w-2.5" : "h-3 w-3"} />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Slide Down</TooltipContent>
           </Tooltip>
 
-          <div className="h-3.5 w-[0.5px] bg-border" aria-hidden="true" />
+          <div className={cn(
+            "w-px bg-border",
+            isExtraSmall ? "h-3 mx-0" : "h-3.5 mx-0.5"
+          )} aria-hidden="true" />
 
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
                 variant="ghost"
                 size="sm"
-                className="h-6 rounded-sm px-0.5 text-xs"
+                className={cn(
+                  "rounded-sm text-xs",
+                  isExtraSmall ? "h-4 my-0 px-0.25" : "h-6 px-0.5"
+                )}
                 onClick={() => onSplit(chapterIndex, roundIndex)}
               >
-                <DividerHorizontalIcon className="h-3 w-3" />
+                <DividerHorizontalIcon className={isExtraSmall ? "h-2.5 w-2.5" : "h-3 w-3"} />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Split</TooltipContent>
@@ -91,30 +106,37 @@ export const RoundActionsToolbar: FC<RoundActionsToolbarProps> = ({
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  "h-6 rounded-sm px-0.5 text-xs",
+                  "rounded-sm text-xs",
+                  isExtraSmall ? "h-4 my-0 px-0.25" : "h-6 px-0.5",
                   !isOmitted 
                     ? "text-[#eb6f92] hover:text-[#eb6f92] hover:bg-[#eb6f92]/10" 
                     : "bg-primary text-primary-foreground hover:bg-primary/90"
                 )}
                 onClick={() => onOmit(chapterIndex, roundIndex, isOmitted)}
               >
-                <Cross2Icon className="h-3 w-3" />
+                <Cross2Icon className={isExtraSmall ? "h-2.5 w-2.5" : "h-3 w-3"} />
               </Button>
             </TooltipTrigger>
             <TooltipContent>{isOmitted ? "Include" : "Omit"}</TooltipContent>
           </Tooltip>
 
-          <div className="h-3.5 w-[0.5px] bg-border" aria-hidden="true" />
+          <div className={cn(
+            "w-px bg-border",
+            isExtraSmall ? "h-3 mx-0" : "h-3.5 mx-0.5"
+          )} aria-hidden="true" />
 
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
                 variant="ghost"
                 size="sm"
-                className="h-6 rounded-sm px-0.5 text-xs"
+                className={cn(
+                  "rounded-sm text-xs",
+                  isExtraSmall ? "h-4 my-0 px-0.25" : "h-6 px-0.5"
+                )}
                 onClick={() => onReroll(roundIndex)}
               >
-                <UpdateIcon className="h-3 w-3" />
+                <UpdateIcon className={isExtraSmall ? "h-2.5 w-2.5" : "h-3 w-3"} />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Reroll</TooltipContent>
