@@ -14,7 +14,8 @@ export const FineTuningView: FC = () => {
     slideRoundDown, 
     splitChapter, 
     omitRound, 
-    rerollRoundSummary 
+    rerollRoundSummary,
+    roundSummaryQueue
   } = useStore()
 
   // Handle cases when there's no data yet
@@ -105,6 +106,7 @@ export const FineTuningView: FC = () => {
               onSplit={handleSplit}
               onOmit={handleOmit}
               onReroll={handleReroll}
+              roundSummaryQueue={roundSummaryQueue}
             />
           </TabsContent>
         ))}

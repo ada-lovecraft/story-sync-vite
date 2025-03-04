@@ -37,7 +37,7 @@ export const RoundActionsToolbar: FC<RoundActionsToolbarProps> = ({
     <div className="flex justify-end">
       <TooltipProvider delayDuration={300}>
         <div className={cn(
-          "inline-flex items-center rounded-md border bg-background text-muted-foreground shadow-sm",
+          "inline-flex items-center rounded-md bg-background text-muted-foreground shadow-sm",
           isExtraSmall ? "py-1 px-0 text-xs" : "h-6 p-0"
         )}>
           <Tooltip>

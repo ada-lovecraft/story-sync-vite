@@ -1,7 +1,8 @@
 import { FC } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Chapter, Round } from "@/store"
+import { Card, CardContent } from "@/components/ui/card"
+import { Chapter, Round, SummaryQueueItem } from "@/store"
 import { ChapterTable } from './ChapterTable'
+import { ChapterHeader } from './ChapterHeader'
 
 interface ChapterCardProps {
   chapter: Chapter
@@ -14,6 +15,7 @@ interface ChapterCardProps {
   onSplit: (chapterIndex: number, roundIndex: number) => void
   onOmit: (chapterIndex: number, roundIndex: number, currentOmitted: boolean) => void
   onReroll: (roundIndex: number) => void
+  roundSummaryQueue?: SummaryQueueItem[]
 }
 
 export const ChapterCard: FC<ChapterCardProps> = ({
@@ -27,18 +29,17 @@ export const ChapterCard: FC<ChapterCardProps> = ({
   onSplit,
   onOmit,
   onReroll,
+  roundSummaryQueue = [],
 }) => {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Chapter {chapterIndex + 1}</CardTitle>
-        <CardDescription>
-          {chapter.summary 
-            ? `Summary: ${chapter.summary}` 
-            : `Rounds ${chapter.roundsRange[0]} to ${chapter.roundsRange[1]}`}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+      <ChapterHeader
+        chapter={chapter}
+        chapterIndex={chapterIndex}
+        rounds={rounds}
+        roundSummaryQueue={roundSummaryQueue}
+      />
+      <CardContent className="pt-2 px-2">
         <ChapterTable
           chapter={chapter}
           chapterIndex={chapterIndex}
