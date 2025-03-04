@@ -10,10 +10,11 @@ import { FineTuningView } from './components/fine-tuning-view'
 import { SummarizationQueueView } from './components/summarization-queue-view'
 import StoreTest from './components/StoreTest'
 import { CodeDemo } from './components/code-demo'
+import { ChapterPreviewDemo } from './components/ChapterPreviewDemo'
 import { useStore } from './store'
 
 function App() {
-  const [activeView, setActiveView] = useState<'upload' | 'fine-tuning' | 'summary' | 'store-test' | 'code-demo'>('upload')
+  const [activeView, setActiveView] = useState<'upload' | 'fine-tuning' | 'summary' | 'store-test' | 'code-demo' | 'chapter-preview'>('upload')
   const { roundSummaryQueue } = useStore()
   
   // Handle sidebar navigation
@@ -40,6 +41,7 @@ function App() {
               {activeView === 'summary' && <SummarizationQueueView />}
               {activeView === 'store-test' && <StoreTest />}
               {activeView === 'code-demo' && <CodeDemo />}
+              {activeView === 'chapter-preview' && <ChapterPreviewDemo />}
             </main>
           </ResizablePanel>
           

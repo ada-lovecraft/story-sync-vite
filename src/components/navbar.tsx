@@ -5,7 +5,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useTheme } from '@/hooks/use-theme'
 
 interface NavbarProps {
-  setActiveView: (view: 'upload' | 'fine-tuning' | 'summary' | 'store-test' | 'code-demo') => void
+  setActiveView: (view: 'upload' | 'fine-tuning' | 'summary' | 'store-test' | 'code-demo' | 'chapter-preview') => void
 }
 
 export const Navbar: FC<NavbarProps> = ({ setActiveView }) => {
@@ -24,6 +24,7 @@ export const Navbar: FC<NavbarProps> = ({ setActiveView }) => {
               <TabsTrigger value="summary">Summary</TabsTrigger>
               <TabsTrigger value="store-test">Store Test</TabsTrigger>
               <TabsTrigger value="code-demo">Code Demo</TabsTrigger>
+              <TabsTrigger value="chapter-preview">Chapter Preview</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>

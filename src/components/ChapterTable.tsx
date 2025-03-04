@@ -17,9 +17,6 @@ interface ChapterTableProps {
   onSplit: (chapterIndex: number, roundIndex: number) => void
   onOmit: (chapterIndex: number, roundIndex: number, currentOmitted: boolean) => void
   onReroll: (roundIndex: number) => void
-  hideHeader?: boolean
-  hiddenColumns?: string[]
-  maxHeight?: string
 }
 
 export const ChapterTable: FC<ChapterTableProps> = ({
@@ -33,9 +30,6 @@ export const ChapterTable: FC<ChapterTableProps> = ({
   onSplit,
   onOmit,
   onReroll,
-  hideHeader = false,
-  hiddenColumns = [],
-  maxHeight = "400px",
 }) => {
   // Get rounds for a specific chapter
   const getChapterRounds = () => {
@@ -57,23 +51,16 @@ export const ChapterTable: FC<ChapterTableProps> = ({
     return index.toString().padStart(magnitude, '0')
   }
 
-  // Check if a column is hidden
-  const isColumnHidden = (columnName: string) => {
-    return hiddenColumns.includes(columnName)
-  }
-
   return (
-    <ScrollArea style={{ height: maxHeight }}>
+    <ScrollArea className="h-[400px]">
       <Table>
-        {!hideHeader && (
-          <TableHeader>
-            <TableRow className="py-1">
-              {!isColumnHidden('status') && <TableHead colSpan={2} className="py-2 text-center">#</TableHead>}
-              {!isColumnHidden('summary') && <TableHead className="w-full py-2">Summary</TableHead>}
-              {!isColumnHidden('actions') && <TableHead className="w-48 text-center py-2">Actions</TableHead>}
-            </TableRow>
-          </TableHeader>
-        )}
+        <TableHeader>
+          <TableRow className="py-1">
+            <TableHead colSpan={2} className="py-2 text-center">#</TableHead>
+            <TableHead className="w-full py-2">Summary</TableHead>
+            <TableHead className="w-48 text-center py-2">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
         <TableBody>
           {getChapterRounds().map((round) => {
             const isOmitted = isRoundOmitted(round.roundIndex)
@@ -85,38 +72,30 @@ export const ChapterTable: FC<ChapterTableProps> = ({
                   isOmitted && "opacity-50 bg-muted/50"
                 )}
               >
-                {!isColumnHidden('status') && (
-                  <TableCell className="py-1 px-1">
-                    <StatusBadge status={round.summaryStatus} />
-                  </TableCell>
-                )}
-                {!isColumnHidden('status') && (
-                  <TableCell className="font-mono text-xs font-extralight text-muted-foreground py-1 px-2">
-                    {getPaddedIndex(round.roundIndex)}
-                  </TableCell>
-                )}
-                {!isColumnHidden('summary') && (
-                  <TableCell className="max-w-md truncate text-left py-1 px-2 text-sm">
-                    {round.summary || "No summary available"}
-                  </TableCell>
-                )}
-                {!isColumnHidden('actions') && (
-                  <TableCell className="text-right py-1 px-2">
-                    <RoundActionsToolbar
-                      size="xs"
-                      roundIndex={round.roundIndex}
-                      chapterIndex={chapterIndex}
-                      isFirstChapter={isFirstChapter}
-                      isLastChapter={isLastChapter}
-                      isOmitted={isOmitted}
-                      onSlideUp={onSlideUp}
-                      onSlideDown={onSlideDown}
-                      onSplit={onSplit}
-                      onOmit={onOmit}
-                      onReroll={onReroll}
-                    />
-                  </TableCell>
-                )}
+                <TableCell className="py-1 px-1">
+                  <StatusBadge status={round.summaryStatus} />
+                </TableCell>
+                <TableCell className="font-mono text-xs font-extralight text-muted-foreground py-1 px-2">
+                  {getPaddedIndex(round.roundIndex)}
+                </TableCell>
+                <TableCell className="max-w-md truncate text-left py-1 px-2 text-sm">
+                  {round.summary || "No summary available"}
+                </TableCell>
+                <TableCell className="text-right py-1 px-2">
+                  <RoundActionsToolbar
+                    size="xs"
+                    roundIndex={round.roundIndex}
+                    chapterIndex={chapterIndex}
+                    isFirstChapter={isFirstChapter}
+                    isLastChapter={isLastChapter}
+                    isOmitted={isOmitted}
+                    onSlideUp={onSlideUp}
+                    onSlideDown={onSlideDown}
+                    onSplit={onSplit}
+                    onOmit={onOmit}
+                    onReroll={onReroll}
+                  />
+                </TableCell>
               </TableRow>
             )
           })}
