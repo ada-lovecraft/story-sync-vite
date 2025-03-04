@@ -58,6 +58,10 @@
     npx shadcn@latest add -a -y -o
     ```
   - [x] Set up the project folder structure (components, hooks, store, utils, etc.)
+  - [x] Enhance utility components
+    - [x] implemented dev-story: `docs/dev-story-code-and-stateview-components.md`
+    - [x] Add syntax highlighting to Code component with prism-react-renderer
+    - [x] Create StateView component for displaying structured data with string truncation
 
 ---
 

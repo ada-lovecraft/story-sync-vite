@@ -1,75 +1,124 @@
 import { FC } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ArrowUpIcon, ArrowDownIcon, Cross2Icon, UpdateIcon, DividerHorizontalIcon } from "@radix-ui/react-icons"
+import { DownloadIcon } from "@radix-ui/react-icons"
+import { useStore } from "@/store"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { toast } from "sonner"
+import { ChapterCard } from './ChapterCard'
 
 export const FineTuningView: FC = () => {
+  const { 
+    chapters, 
+    rounds, 
+    slideRoundUp, 
+    slideRoundDown, 
+    splitChapter, 
+    omitRound, 
+    rerollRoundSummary 
+  } = useStore()
+
+  // Handle cases when there's no data yet
+  if (chapters.length === 0 || rounds.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full">
+        <h2 className="text-2xl font-semibold mb-4">No chapters available</h2>
+        <p className="text-muted-foreground">Upload a file first to generate chapters.</p>
+      </div>
+    )
+  }
+
+  // Generate JSON configuration
+  const exportConfig = () => {
+    const config = {
+      chapters: chapters.map(chapter => ({
+        rounds: chapter.roundsRange,
+        omit: chapter.omit
+      }))
+    }
+    
+    // Create and download the JSON file
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'chapter-config.json'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    
+    toast.success("Configuration downloaded successfully")
+  }
+
+  // Handle chapter actions
+  const handleSlideUp = (chapterIndex: number, roundIndex: number) => {
+    if (chapterIndex > 0) {
+      slideRoundUp(chapterIndex, roundIndex)
+      toast.success(`Round ${roundIndex} moved to previous chapter`)
+    }
+  }
+
+  const handleSlideDown = (chapterIndex: number, roundIndex: number) => {
+    if (chapterIndex < chapters.length - 1) {
+      slideRoundDown(chapterIndex, roundIndex)
+      toast.success(`Round ${roundIndex} moved to next chapter`)
+    }
+  }
+
+  const handleSplit = (chapterIndex: number, roundIndex: number) => {
+    splitChapter(chapterIndex, roundIndex)
+    toast.success(`Chapter split at round ${roundIndex}`)
+  }
+
+  const handleOmit = (chapterIndex: number, roundIndex: number, currentOmitted: boolean) => {
+    omitRound(chapterIndex, roundIndex, !currentOmitted)
+    toast.success(`Round ${roundIndex} ${!currentOmitted ? 'omitted' : 'included'}`)
+  }
+
+  const handleReroll = (roundIndex: number) => {
+    rerollRoundSummary(roundIndex)
+    toast.success(`Round ${roundIndex} added to summarization queue`)
+  }
+
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Chapter Fine-Tuning</CardTitle>
-          <CardDescription>
-            Adjust chapters and rounds to optimize your story's summarization.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <h3 className="text-lg font-semibold mb-4">Chapter 1</h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">Index</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-full">Summary</TableHead>
-                <TableHead className="w-48 text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {/* Placeholder for round data */}
-              {[1, 2, 3].map((round) => (
-                <TableRow key={round}>
-                  <TableCell>{round}</TableCell>
-                  <TableCell>
-                    <Badge variant={round === 3 ? "outline" : "default"}>
-                      {round === 3 ? "Pending" : "Summarized"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="max-w-md truncate">
-                    {round === 3 
-                      ? "Waiting for summarization..." 
-                      : "This is a placeholder for the round summary that will be generated during the summarization process."}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button variant="outline" size="icon" title="Slide Up">
-                        <ArrowUpIcon className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="icon" title="Slide Down">
-                        <ArrowDownIcon className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="icon" title="Split">
-                        <DividerHorizontalIcon className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="icon" title="Omit">
-                        <Cross2Icon className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="icon" title="Reroll">
-                        <UpdateIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="0">
+        <TabsList className="mb-4">
+          {chapters.map((_, index) => (
+            <TabsTrigger key={index} value={index.toString()}>
+              Chapter {index + 1}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {chapters.map((chapter, chapterIndex) => (
+          <TabsContent key={chapterIndex} value={chapterIndex.toString()}>
+            <ChapterCard
+              chapter={chapter}
+              chapterIndex={chapterIndex}
+              rounds={rounds}
+              isFirstChapter={chapterIndex === 0}
+              isLastChapter={chapterIndex === chapters.length - 1}
+              onSlideUp={handleSlideUp}
+              onSlideDown={handleSlideDown}
+              onSplit={handleSplit}
+              onOmit={handleOmit}
+              onReroll={handleReroll}
+            />
+          </TabsContent>
+        ))}
+      </Tabs>
       
       <div className="flex justify-end">
-        <Button variant="outline" className="mr-2">Download Configuration</Button>
-        <Button>Save Changes</Button>
+        <Button 
+          variant="outline" 
+          className="mr-2"
+          onClick={exportConfig}
+        >
+          <DownloadIcon className="h-4 w-4 mr-2" />
+          Download Configuration
+        </Button>
       </div>
     </div>
   )

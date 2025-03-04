@@ -3,10 +3,12 @@ import { useStore, Round, Chapter } from '@/store';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Code } from "@/components/ui/code";
+import { StateView } from './StateView';
 
 const StoreTest: React.FC = () => {
   const [fileContent, setFileContent] = useState<string>('');
+  const [truncateStrings, setTruncateStrings] = useState(true);
+  const [truncateLength, setTruncateLength] = useState(100);
   const store = useStore();
   
   // Handler for "raw" file content upload
@@ -63,6 +65,18 @@ const StoreTest: React.FC = () => {
   // Reset the store
   const resetStore = () => {
     store.resetStore();
+  };
+  
+  // Prepare store data for StateView
+  const getStoreData = () => {
+    return {
+      rawFileContent: store.rawFileContent,
+      processedContent: store.processedContent,
+      rounds: store.rounds,
+      chapters: store.chapters,
+      roundSummaryQueue: store.roundSummaryQueue,
+      chapterSummaryQueue: store.chapterSummaryQueue
+    };
   };
   
   return (
@@ -122,20 +136,16 @@ const StoreTest: React.FC = () => {
           
           <div>
             <h3 className="text-lg font-medium">Current Store State</h3>
-            <Code className="w-full mt-2 p-4 max-h-64 overflow-auto">
-              {JSON.stringify(
-                {
-                  rawFileContent: store.rawFileContent,
-                  processedContent: store.processedContent,
-                  rounds: store.rounds,
-                  chapters: store.chapters,
-                  roundSummaryQueue: store.roundSummaryQueue,
-                  chapterSummaryQueue: store.chapterSummaryQueue
-                }, 
-                null, 
-                2
-              )}
-            </Code>
+            <StateView 
+              data={getStoreData()}
+              title="Store State"
+              description="Current state of the Zustand store"
+              truncateStrings={truncateStrings}
+              truncateLength={truncateLength}
+              onTruncateStringsChange={setTruncateStrings}
+              onTruncateLengthChange={setTruncateLength}
+              maxHeight="300px"
+            />
           </div>
         </CardContent>
         
