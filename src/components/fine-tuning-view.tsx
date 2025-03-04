@@ -2,7 +2,6 @@ import { FC } from 'react'
 import { Button } from "@/components/ui/button"
 import { DownloadIcon } from "@radix-ui/react-icons"
 import { useStore } from "@/store"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { ChapterCard } from './ChapterCard'
 
@@ -84,17 +83,9 @@ export const FineTuningView: FC = () => {
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="0">
-        <TabsList className="mb-4">
-          {chapters.map((_, index) => (
-            <TabsTrigger key={index} value={index.toString()}>
-              Chapter {index + 1}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
+      <div className="space-y-6">
         {chapters.map((chapter, chapterIndex) => (
-          <TabsContent key={chapterIndex} value={chapterIndex.toString()}>
+          <div key={chapterIndex} className="mb-6">
             <ChapterCard
               chapter={chapter}
               chapterIndex={chapterIndex}
@@ -108,9 +99,9 @@ export const FineTuningView: FC = () => {
               onReroll={handleReroll}
               roundSummaryQueue={roundSummaryQueue}
             />
-          </TabsContent>
+          </div>
         ))}
-      </Tabs>
+      </div>
       
       <div className="flex justify-end">
         <Button 
