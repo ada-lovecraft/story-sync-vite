@@ -129,19 +129,20 @@
 
 ### 7. Chapter Fine-Tuning UI & Actions
 
-- **[ ] Build Chapter Fine-Tuning View**  
-  - [ ] Create a table view for each chapter listing its rounds  
-  - [ ] Display round metadata: index, summary status icon, narrative summary (if available)  
-  - [ ] Add controls for each round:
-    - **Slide Up:** Move rounds (including the invoked round) to the previous chapter (disabled on first chapter)  
-    - **Slide Down:** Move rounds (including the invoked round) to the next chapter (disabled on last chapter)  
-    - **Split:** Create a new chapter from the invoked round (including that round)  
+- **[x] Build Chapter Fine-Tuning View**  
+  - [x] Create a table view for each chapter listing its rounds  
+  - [x] Display round metadata: index, summary status icon, narrative summary (if available)  
+  - [x] Add controls for each round:
+    - **Slide Up:** Move chapter rounds above (including the invoked round) to the previous chapter (disabled on first chapter)  
+    - **Slide Down:** Move chapter rounds below (including the invoked round) to the next chapter (disabled on last chapter)  
+    - **Split:** Create a new chapter from the invoked round and all remaining rounds in chapter   
     - **Omit:** Mark the round as omitted (gray out row, flag in configuration, exclude from summarization)  
     - **Reroll:** Adjust the summarization queue (move to top if already queued or insert at the top)
   
-- **[ ] Integrate Fine-Tuning Controls with Store**  
-  - [ ] Ensure each control action updates the corresponding state in the Zustand store  
-  - [ ] Confirm all actions are reversible without confirmation dialogs
+- **[x] Integrate Fine-Tuning Controls with Store**  
+  - [x] Ensure each control action updates the corresponding state in the Zustand store  
+  - [x] Confirm all actions are reversible without confirmation dialogs
+  - [x] Fix implementation of slide up/down and split functions to properly update state
 
 ---
 

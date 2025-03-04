@@ -69,7 +69,7 @@ export const ChapterTable: FC<ChapterTableProps> = ({
                 key={round.roundIndex} 
                 className={cn(
                   "py-1",
-                  isOmitted && "opacity-50 bg-muted/50"
+                  isOmitted && "opacity-50 bg-muted/50 text-muted-foreground line-through"
                 )}
               >
                 <TableCell className="py-1 px-1">
@@ -78,8 +78,15 @@ export const ChapterTable: FC<ChapterTableProps> = ({
                 <TableCell className="font-mono text-xs font-extralight text-muted-foreground py-1 px-2">
                   {getPaddedIndex(round.roundIndex)}
                 </TableCell>
-                <TableCell className="max-w-md truncate text-left py-1 px-2 text-sm">
-                  {round.summary || "No summary available"}
+                <TableCell className={cn(
+                  "max-w-md truncate text-left py-1 px-2 text-sm",
+                  isOmitted && "text-muted-foreground"
+                )}>
+                  {isOmitted ? (
+                    <span className="italic">Omitted from summarization</span>
+                  ) : (
+                    round.summary || "No summary available"
+                  )}
                 </TableCell>
                 <TableCell className="text-right py-1 px-2">
                   <RoundActionsToolbar

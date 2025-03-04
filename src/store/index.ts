@@ -114,9 +114,49 @@ export const useStore = create<StoreState>()(
         const currentChapter = { ...newChapters[chapterIndex] };
         const previousChapter = { ...newChapters[chapterIndex - 1] };
         
-        // Update the round ranges
-        // This is a simplified implementation that would need more logic
-        // based on how rounds are actually stored and referenced
+        // Find the position of the roundIndex in the current chapter
+        const [currentStart, currentEnd] = currentChapter.roundsRange;
+        
+        // If the round is not in this chapter or it's the first round, return unchanged state
+        if (roundIndex < currentStart || roundIndex > currentEnd) {
+          return state;
+        }
+        
+        // Calculate how many rounds to move (from the clicked round to the end of the chapter)
+        const roundsToMove = currentEnd - roundIndex + 1;
+        
+        // Update the previous chapter's end range
+        const [prevStart, prevEnd] = previousChapter.roundsRange;
+        previousChapter.roundsRange = [prevStart, prevEnd + roundsToMove] as [number, number];
+        
+        // Update the current chapter's start range
+        currentChapter.roundsRange = [currentStart, roundIndex - 1] as [number, number];
+        
+        // If the current chapter would be empty after this operation, remove it
+        if (currentChapter.roundsRange[0] > currentChapter.roundsRange[1]) {
+          newChapters.splice(chapterIndex, 1);
+        } else {
+          newChapters[chapterIndex] = currentChapter;
+        }
+        
+        // Update the previous chapter
+        newChapters[chapterIndex - 1] = previousChapter;
+        
+        // Move any omitted rounds to the appropriate chapter
+        const omittedRoundsToMove = currentChapter.omit.filter(
+          omittedIndex => omittedIndex >= roundIndex && omittedIndex <= currentEnd
+        );
+        
+        if (omittedRoundsToMove.length > 0) {
+          // Remove from current chapter
+          currentChapter.omit = currentChapter.omit.filter(
+            omittedIndex => omittedIndex < roundIndex
+          );
+          
+          // Add to previous chapter
+          previousChapter.omit = [...previousChapter.omit, ...omittedRoundsToMove];
+        }
+        
         return { chapters: newChapters };
       }),
       
@@ -128,9 +168,49 @@ export const useStore = create<StoreState>()(
         const currentChapter = { ...newChapters[chapterIndex] };
         const nextChapter = { ...newChapters[chapterIndex + 1] };
         
-        // Update the round ranges
-        // This is a simplified implementation that would need more logic
-        // based on how rounds are actually stored and referenced
+        // Find the position of the roundIndex in the current chapter
+        const [currentStart, currentEnd] = currentChapter.roundsRange;
+        
+        // If the round is not in this chapter, return unchanged state
+        if (roundIndex < currentStart || roundIndex > currentEnd) {
+          return state;
+        }
+        
+        // Calculate how many rounds to move (from the clicked round to the end of the chapter)
+        const roundsToMove = currentEnd - roundIndex + 1;
+        
+        // Update the next chapter's start range
+        const [nextStart, nextEnd] = nextChapter.roundsRange;
+        nextChapter.roundsRange = [nextStart - roundsToMove, nextEnd] as [number, number];
+        
+        // Update the current chapter's end range
+        currentChapter.roundsRange = [currentStart, roundIndex - 1] as [number, number];
+        
+        // If the current chapter would be empty after this operation, remove it
+        if (currentChapter.roundsRange[0] > currentChapter.roundsRange[1]) {
+          newChapters.splice(chapterIndex, 1);
+        } else {
+          newChapters[chapterIndex] = currentChapter;
+        }
+        
+        // Update the next chapter
+        newChapters[chapterIndex + 1] = nextChapter;
+        
+        // Move any omitted rounds to the appropriate chapter
+        const omittedRoundsToMove = currentChapter.omit.filter(
+          omittedIndex => omittedIndex >= roundIndex && omittedIndex <= currentEnd
+        );
+        
+        if (omittedRoundsToMove.length > 0) {
+          // Remove from current chapter
+          currentChapter.omit = currentChapter.omit.filter(
+            omittedIndex => omittedIndex < roundIndex
+          );
+          
+          // Add to next chapter
+          nextChapter.omit = [...nextChapter.omit, ...omittedRoundsToMove];
+        }
+        
         return { chapters: newChapters };
       }),
       
@@ -138,9 +218,40 @@ export const useStore = create<StoreState>()(
         const newChapters = [...state.chapters];
         const chapterToSplit = { ...newChapters[chapterIndex] };
         
+        // Find the position of the roundIndex in the chapter
+        const [start, end] = chapterToSplit.roundsRange;
+        
+        // If the round is not in this chapter, return unchanged state
+        if (roundIndex < start || roundIndex > end) {
+          return state;
+        }
+        
+        // If trying to split at the first round, just return the original state
+        // since we can't create an empty first chapter
+        if (roundIndex === start) {
+          return state;
+        }
+        
         // Create two new chapters from the split
-        // This is a simplified implementation that would need more logic
-        // based on how rounds are actually stored and referenced
+        const firstChapter = {
+          ...chapterToSplit,
+          roundsRange: [start, roundIndex - 1] as [number, number],
+          omit: chapterToSplit.omit.filter(idx => idx < roundIndex)
+        };
+        
+        const secondChapter: Chapter = {
+          roundsRange: [roundIndex, end] as [number, number],
+          omit: chapterToSplit.omit.filter(idx => idx >= roundIndex),
+          summary: undefined,
+          summaryStatus: undefined
+        };
+        
+        // Replace the original chapter with the first chapter
+        newChapters[chapterIndex] = firstChapter;
+        
+        // Insert the second chapter after the first one
+        newChapters.splice(chapterIndex + 1, 0, secondChapter);
+        
         return { chapters: newChapters };
       }),
       
@@ -159,7 +270,32 @@ export const useStore = create<StoreState>()(
         }
         
         newChapters[chapterIndex] = chapter;
-        return { chapters: newChapters };
+        
+        // Update the corresponding round's summary status to reflect it's omitted
+        // This will help with visual indication in the UI
+        const newRounds = [...state.rounds];
+        const roundToUpdate = newRounds.find(round => round.roundIndex === roundIndex);
+        
+        if (roundToUpdate) {
+          // If omitted, mark round with a special status (or use existing status)
+          // This is purely for UI indication and doesn't affect actual summarization
+          const updatedRound = {
+            ...roundToUpdate,
+            // Optional: Add a flag to indicate this round is omitted from processing
+            // We could add a new property like `isOmitted` but using the chapter.omit array is cleaner
+          };
+          
+          // Update the round in the array
+          const roundIdx = newRounds.findIndex(r => r.roundIndex === roundIndex);
+          if (roundIdx !== -1) {
+            newRounds[roundIdx] = updatedRound;
+          }
+        }
+        
+        return { 
+          chapters: newChapters,
+          rounds: newRounds 
+        };
       }),
       
       // Summarization Queue Actions
@@ -194,6 +330,16 @@ export const useStore = create<StoreState>()(
           item => item.id === roundIndex && item.type === 'round'
         );
         
+        // Update the round status to 'pending' in the rounds array
+        const newRounds = [...state.rounds];
+        const roundToUpdateIndex = newRounds.findIndex(round => round.roundIndex === roundIndex);
+        if (roundToUpdateIndex !== -1) {
+          newRounds[roundToUpdateIndex] = {
+            ...newRounds[roundToUpdateIndex],
+            summaryStatus: 'pending'
+          };
+        }
+        
         if (existingIndex !== -1) {
           // Remove from current position
           const item = newQueue.splice(existingIndex, 1)[0];
@@ -204,7 +350,10 @@ export const useStore = create<StoreState>()(
           newQueue.unshift({ id: roundIndex, type: 'round', status: 'pending' });
         }
         
-        return { roundSummaryQueue: newQueue };
+        return { 
+          roundSummaryQueue: newQueue,
+          rounds: newRounds
+        };
       }),
       
       enqueueChapterSummary: (chapterIndex) => set((state) => {

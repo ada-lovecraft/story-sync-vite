@@ -73,12 +73,28 @@ export const FineTuningView: FC = () => {
 
   const handleOmit = (chapterIndex: number, roundIndex: number, currentOmitted: boolean) => {
     omitRound(chapterIndex, roundIndex, !currentOmitted)
-    toast.success(`Round ${roundIndex} ${!currentOmitted ? 'omitted' : 'included'}`)
+    
+    // Show different toast messages based on action
+    if (currentOmitted) {
+      toast.success(`Round ${roundIndex} included in summarization`)
+    } else {
+      toast.success(`Round ${roundIndex} omitted from summarization`)
+    }
   }
 
   const handleReroll = (roundIndex: number) => {
     rerollRoundSummary(roundIndex)
-    toast.success(`Round ${roundIndex} added to summarization queue`)
+    
+    // Check if the round is already in the queue to show appropriate message
+    const isAlreadyInQueue = roundSummaryQueue.some(
+      item => item.id === roundIndex && item.type === 'round'
+    )
+    
+    if (isAlreadyInQueue) {
+      toast.success(`Round ${roundIndex} moved to top of summarization queue`)
+    } else {
+      toast.success(`Round ${roundIndex} added to summarization queue`)
+    }
   }
 
   return (
