@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import './App.css'
-import { UploadArea } from './components/upload-area'
-import { FineTuningView } from './components/fine-tuning-view'
-import { SummarizationQueueView } from './components/summarization-queue-view'
-import StoreTest from './components/StoreTest'
-import { CodeDemo } from './components/code-demo'
-import { ChapterPreviewDemo } from './components/ChapterPreviewDemo'
-import { MainLayout } from './components/MainLayout'
+import { UploadArea } from '@/components/upload-area'
+import { FineTuningView } from '@/components/fine-tuning-view'
+import { SummarizationQueueView } from '@/components/summarization-queue-view'
+import StoreTest from '@/components/StoreTest'
+import { CodeDemo } from '@/components/code-demo'
+import { ChapterPreviewDemo } from '@/components/ChapterPreviewDemo'
+import { MainLayout } from '@/components/MainLayout'
 import { SidebarProvider } from '@/components/ui/sidebar'
 
 type ViewType = 'upload' | 'fine-tuning' | 'summary' | 'store-test' | 'code-demo' | 'chapter-preview'
@@ -24,11 +24,16 @@ function App() {
     setActiveView(view)
   }
 
+  // Handle navigation from upload to fine-tuning
+  const handleNextFromUpload = () => {
+    setActiveView('fine-tuning')
+  }
+
   // Render the content based on active view
   const renderContent = () => {
     switch (activeView) {
       case 'upload':
-        return <UploadArea />
+        return <UploadArea onNext={handleNextFromUpload} />
       case 'fine-tuning':
         return <FineTuningView />
       case 'summary':
@@ -40,7 +45,7 @@ function App() {
       case 'chapter-preview':
         return <ChapterPreviewDemo />
       default:
-        return <UploadArea />
+        return <UploadArea onNext={handleNextFromUpload} />
     }
   }
 
