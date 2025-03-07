@@ -16,6 +16,7 @@ interface ChapterCardProps {
   onOmit: (chapterIndex: number, roundIndex: number, currentOmitted: boolean) => void
   onReroll: (roundIndex: number) => void
   roundSummaryQueue?: SummaryQueueItem[]
+  allChapters?: Chapter[]
 }
 
 export const ChapterCard: FC<ChapterCardProps> = ({
@@ -30,6 +31,7 @@ export const ChapterCard: FC<ChapterCardProps> = ({
   onOmit,
   onReroll,
   roundSummaryQueue = [],
+  allChapters = []
 }) => {
   return (
     <Card>
@@ -51,6 +53,7 @@ export const ChapterCard: FC<ChapterCardProps> = ({
           onSplit={onSplit}
           onOmit={onOmit}
           onReroll={onReroll}
+          allChapters={allChapters}
         />
       </CardContent>
     </Card>

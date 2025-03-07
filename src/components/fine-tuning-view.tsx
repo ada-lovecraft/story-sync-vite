@@ -6,13 +6,13 @@ import { toast } from "sonner"
 import { ChapterCard } from './ChapterCard'
 
 export const FineTuningView: FC = () => {
-  const { 
-    chapters, 
-    rounds, 
-    slideRoundUp, 
-    slideRoundDown, 
-    splitChapter, 
-    omitRound, 
+  const {
+    chapters,
+    rounds,
+    slideRoundUp,
+    slideRoundDown,
+    splitChapter,
+    omitRound,
     rerollRoundSummary,
     roundSummaryQueue
   } = useStore()
@@ -35,11 +35,11 @@ export const FineTuningView: FC = () => {
         omit: chapter.omit
       }))
     }
-    
+
     // Create and download the JSON file
     const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
-    
+
     const a = document.createElement('a')
     a.href = url
     a.download = 'chapter-config.json'
@@ -47,7 +47,7 @@ export const FineTuningView: FC = () => {
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
-    
+
     toast.success("Configuration downloaded successfully")
   }
 
@@ -73,7 +73,7 @@ export const FineTuningView: FC = () => {
 
   const handleOmit = (chapterIndex: number, roundIndex: number, currentOmitted: boolean) => {
     omitRound(chapterIndex, roundIndex, !currentOmitted)
-    
+
     // Show different toast messages based on action
     if (currentOmitted) {
       toast.success(`Round ${roundIndex} included in summarization`)
@@ -84,12 +84,12 @@ export const FineTuningView: FC = () => {
 
   const handleReroll = (roundIndex: number) => {
     rerollRoundSummary(roundIndex)
-    
+
     // Check if the round is already in the queue to show appropriate message
     const isAlreadyInQueue = roundSummaryQueue.some(
       item => item.id === roundIndex && item.type === 'round'
     )
-    
+
     if (isAlreadyInQueue) {
       toast.success(`Round ${roundIndex} moved to top of summarization queue`)
     } else {
@@ -114,14 +114,15 @@ export const FineTuningView: FC = () => {
               onOmit={handleOmit}
               onReroll={handleReroll}
               roundSummaryQueue={roundSummaryQueue}
+              allChapters={chapters}
             />
           </div>
         ))}
       </div>
-      
+
       <div className="flex justify-end">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           className="mr-2"
           onClick={exportConfig}
         >

@@ -32,7 +32,7 @@ export const RoundActionsToolbar: FC<RoundActionsToolbarProps> = ({
   size = 'sm'
 }) => {
   const isExtraSmall = size === 'xs';
-  
+
   return (
     <div className="flex justify-end">
       <TooltipProvider delayDuration={300}>
@@ -42,7 +42,7 @@ export const RoundActionsToolbar: FC<RoundActionsToolbarProps> = ({
         )}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button 
+              <Button
                 variant="ghost"
                 size="sm"
                 className={cn(
@@ -51,7 +51,10 @@ export const RoundActionsToolbar: FC<RoundActionsToolbarProps> = ({
                   isFirstChapter && "opacity-50 cursor-not-allowed"
                 )}
                 disabled={isFirstChapter}
-                onClick={() => onSlideUp(chapterIndex, roundIndex)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSlideUp(chapterIndex, roundIndex);
+                }}
               >
                 <ArrowUpIcon className={isExtraSmall ? "h-2.5 w-2.5" : "h-3 w-3"} />
               </Button>
@@ -61,7 +64,7 @@ export const RoundActionsToolbar: FC<RoundActionsToolbarProps> = ({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button 
+              <Button
                 variant="ghost"
                 size="sm"
                 className={cn(
@@ -70,7 +73,10 @@ export const RoundActionsToolbar: FC<RoundActionsToolbarProps> = ({
                   isLastChapter && "opacity-50 cursor-not-allowed"
                 )}
                 disabled={isLastChapter}
-                onClick={() => onSlideDown(chapterIndex, roundIndex)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSlideDown(chapterIndex, roundIndex);
+                }}
               >
                 <ArrowDownIcon className={isExtraSmall ? "h-2.5 w-2.5" : "h-3 w-3"} />
               </Button>
@@ -85,14 +91,17 @@ export const RoundActionsToolbar: FC<RoundActionsToolbarProps> = ({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button 
+              <Button
                 variant="ghost"
                 size="sm"
                 className={cn(
                   "rounded-sm text-xs",
                   isExtraSmall ? "h-4 my-0 px-0.25" : "h-6 px-0.5"
                 )}
-                onClick={() => onSplit(chapterIndex, roundIndex)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSplit(chapterIndex, roundIndex);
+                }}
               >
                 <DividerHorizontalIcon className={isExtraSmall ? "h-2.5 w-2.5" : "h-3 w-3"} />
               </Button>
@@ -102,17 +111,20 @@ export const RoundActionsToolbar: FC<RoundActionsToolbarProps> = ({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button 
+              <Button
                 variant="ghost"
                 size="sm"
                 className={cn(
                   "rounded-sm text-xs",
                   isExtraSmall ? "h-4 my-0 px-0.25" : "h-6 px-0.5",
-                  !isOmitted 
-                    ? "text-[#eb6f92] hover:text-[#eb6f92] hover:bg-[#eb6f92]/10" 
+                  !isOmitted
+                    ? "text-[#eb6f92] hover:text-[#eb6f92] hover:bg-[#eb6f92]/10"
                     : "bg-primary text-primary-foreground hover:bg-primary/90"
                 )}
-                onClick={() => onOmit(chapterIndex, roundIndex, isOmitted)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOmit(chapterIndex, roundIndex, isOmitted);
+                }}
               >
                 <Cross2Icon className={isExtraSmall ? "h-2.5 w-2.5" : "h-3 w-3"} />
               </Button>
@@ -127,14 +139,17 @@ export const RoundActionsToolbar: FC<RoundActionsToolbarProps> = ({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button 
+              <Button
                 variant="ghost"
                 size="sm"
                 className={cn(
                   "rounded-sm text-xs",
                   isExtraSmall ? "h-4 my-0 px-0.25" : "h-6 px-0.5"
                 )}
-                onClick={() => onReroll(roundIndex)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReroll(roundIndex);
+                }}
               >
                 <UpdateIcon className={isExtraSmall ? "h-2.5 w-2.5" : "h-3 w-3"} />
               </Button>
