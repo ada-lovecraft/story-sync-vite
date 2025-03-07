@@ -1,24 +1,24 @@
 import { ReactNode, useState, useEffect } from 'react'
 import { Toaster } from "@/components/ui/sonner"
 import { Separator } from "@/components/ui/separator"
-import { 
-  Breadcrumb, 
-  BreadcrumbItem, 
-  BreadcrumbLink, 
-  BreadcrumbList, 
-  BreadcrumbPage, 
-  BreadcrumbSeparator 
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator
 } from "@/components/ui/breadcrumb"
-import { 
-  SidebarInset, 
-  SidebarTrigger 
+import {
+  SidebarInset,
+  SidebarTrigger
 } from "@/components/ui/sidebar"
-import { 
-  Sheet, 
-  SheetContent, 
-  SheetHeader, 
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
   SheetTitle,
-  SheetTrigger 
+  SheetTrigger
 } from "@/components/ui/sheet"
 import { AppSidebarCustom } from './app-sidebar-custom'
 import { QueuePanel } from './QueuePanel'
@@ -26,20 +26,20 @@ import { Button } from '@/components/ui/button'
 
 interface MainLayoutProps {
   children: ReactNode
-  activeView: 'upload' | 'fine-tuning' | 'summary' | 'store-test' | 'code-demo' | 'chapter-preview'
+  activeView: 'upload' | 'fine-tuning' | 'summary' | 'store-test' | 'code-demo' | 'chapter-preview' | 'tools'
   setActiveView: (view: any) => void
   onSidebarNavigation: (view: any) => void
 }
 
-export function MainLayout({ 
-  children, 
-  activeView, 
-  setActiveView, 
-  onSidebarNavigation 
+export function MainLayout({
+  children,
+  activeView,
+  setActiveView,
+  onSidebarNavigation
 }: MainLayoutProps) {
   // State for controlling the queue sheet
   const [isQueueOpen, setIsQueueOpen] = useState(false)
-  
+
   // Close the sheet when leaving the fine-tuning view
   useEffect(() => {
     if (activeView !== 'fine-tuning') {
@@ -62,6 +62,8 @@ export function MainLayout({
         return 'Code Demo'
       case 'chapter-preview':
         return 'Chapter Preview'
+      case 'tools':
+        return 'Tools'
       default:
         return 'Dashboard'
     }
@@ -70,11 +72,11 @@ export function MainLayout({
   return (
     <div className="h-screen w-full flex overflow-hidden bg-background">
       {/* Sidebar */}
-      <AppSidebarCustom 
-        className="h-full border-r" 
+      <AppSidebarCustom
+        className="h-full border-r"
         onNavigation={onSidebarNavigation}
       />
-      
+
       {/* Main Content */}
       <SidebarInset className="flex-1 flex flex-col overflow-hidden">
         {/* Header with breadcrumbs */}
@@ -95,7 +97,7 @@ export function MainLayout({
               </Breadcrumb>
             </div>
           </div>
-          
+
           {/* Queue sheet trigger button - only show in fine-tuning view */}
           {activeView === 'fine-tuning' && (
             <div className="ml-auto">
@@ -109,7 +111,7 @@ export function MainLayout({
             </div>
           )}
         </header>
-        
+
         {/* Scrollable content area */}
         <div className="flex-1 overflow-auto">
           <div className="mx-auto">
@@ -120,7 +122,7 @@ export function MainLayout({
           </div>
         </div>
       </SidebarInset>
-      
+
       {/* Queue panel in sheet - only rendered in fine-tuning view */}
       {activeView === 'fine-tuning' && (
         <Sheet open={isQueueOpen} onOpenChange={setIsQueueOpen}>
@@ -134,7 +136,7 @@ export function MainLayout({
           </SheetContent>
         </Sheet>
       )}
-      
+
       <Toaster />
     </div>
   )

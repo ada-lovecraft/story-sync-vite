@@ -6,19 +6,20 @@ import { SummarizationQueueView } from '@/components/summarization-queue-view'
 import StoreTest from '@/components/StoreTest'
 import { CodeDemo } from '@/components/code-demo'
 import { ChapterPreviewDemo } from '@/components/ChapterPreviewDemo'
+import { ToolsView } from '@/components/ToolsView'
 import { MainLayout } from '@/components/MainLayout'
 import { SidebarProvider } from '@/components/ui/sidebar'
 
-type ViewType = 'upload' | 'fine-tuning' | 'summary' | 'store-test' | 'code-demo' | 'chapter-preview'
+type ViewType = 'upload' | 'fine-tuning' | 'summary' | 'store-test' | 'code-demo' | 'chapter-preview' | 'tools'
 
 function App() {
   const [activeView, setActiveView] = useState<ViewType>('upload')
-  
+
   // Set dark mode on load
   useEffect(() => {
     document.documentElement.classList.add('dark')
   }, [])
-  
+
   // Handle sidebar navigation
   const handleSidebarNavigation = (view: ViewType) => {
     setActiveView(view)
@@ -44,6 +45,8 @@ function App() {
         return <CodeDemo />
       case 'chapter-preview':
         return <ChapterPreviewDemo />
+      case 'tools':
+        return <ToolsView />
       default:
         return <UploadArea onNext={handleNextFromUpload} />
     }
@@ -51,9 +54,9 @@ function App() {
 
   return (
     <SidebarProvider defaultOpen={true}>
-      <MainLayout 
-        activeView={activeView} 
-        setActiveView={setActiveView} 
+      <MainLayout
+        activeView={activeView}
+        setActiveView={setActiveView}
         onSidebarNavigation={handleSidebarNavigation}
       >
         {renderContent()}

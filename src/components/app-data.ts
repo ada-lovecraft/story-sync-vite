@@ -12,6 +12,7 @@ import {
   Inbox,
   Music,
   MoreHorizontal,
+  Wrench,
 } from "lucide-react"
 
 // App navigation data
@@ -52,6 +53,12 @@ export const appData = {
       url: "#",
       icon: Inbox,
       action: 'summary'
+    },
+    {
+      title: "Tools",
+      url: "#",
+      icon: Wrench,
+      action: 'tools'
     },
     {
       title: "Demo",
