@@ -7,10 +7,11 @@ import StoreTest from '@/components/StoreTest'
 import { CodeDemo } from '@/components/code-demo'
 import { ChapterPreviewDemo } from '@/components/ChapterPreviewDemo'
 import { ToolsView } from '@/components/ToolsView'
+import { MetaPrompter } from '@/components/MetaPrompter'
 import { MainLayout } from '@/components/MainLayout'
 import { SidebarProvider } from '@/components/ui/sidebar'
 
-type ViewType = 'upload' | 'fine-tuning' | 'summary' | 'store-test' | 'code-demo' | 'chapter-preview' | 'tools'
+type ViewType = 'upload' | 'fine-tuning' | 'summary' | 'store-test' | 'code-demo' | 'chapter-preview' | 'tools' | 'meta-prompter'
 
 function App() {
   const [activeView, setActiveView] = useState<ViewType>('upload')
@@ -47,6 +48,8 @@ function App() {
         return <ChapterPreviewDemo />
       case 'tools':
         return <ToolsView />
+      case 'meta-prompter':
+        return <MetaPrompter />
       default:
         return <UploadArea onNext={handleNextFromUpload} />
     }

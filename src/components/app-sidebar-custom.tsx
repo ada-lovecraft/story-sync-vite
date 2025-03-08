@@ -2,7 +2,7 @@ import * as React from "react"
 import { ChevronRight, type LucideIcon } from "lucide-react"
 
 import { appData } from "./app-data"
-import { NavProjects } from "@/components/nav-projects"
+import { NavTools } from "@/components/nav-tools"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
 import {
@@ -38,7 +38,7 @@ export function AppSidebarCustom({ onNavigation, ...props }: AppSidebarCustomPro
       </SidebarHeader>
       <SidebarContent>
         <CustomNavMain items={appData.navMain} onNavigation={onNavigation} />
-        <NavProjects projects={appData.projects} />
+        <NavTools projects={appData.projects} onNavigation={onNavigation} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={appData.user} />

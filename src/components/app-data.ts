@@ -55,12 +55,6 @@ export const appData = {
       action: 'summary'
     },
     {
-      title: "Tools",
-      url: "#",
-      icon: Wrench,
-      action: 'tools'
-    },
-    {
       title: "Demo",
       url: "#",
       icon: Bot,
@@ -94,6 +88,18 @@ export const appData = {
     },
   ],
   projects: [
+    {
+      name: "Prompt Tester",
+      url: "#",
+      icon: Wrench,
+      action: 'tools'
+    },
+    {
+      name: "Meta Prompter",
+      url: "#",
+      icon: Bot,
+      action: 'meta-prompter'
+    },
     {
       name: "Story Project 1",
       url: "#",
