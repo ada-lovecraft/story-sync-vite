@@ -109,12 +109,9 @@ export function QueuePanel({ setActiveView }: QueuePanelProps) {
       
       {roundSummaryQueue.length > 6 && (
         <div className="text-center mt-4">
-          <a 
-            className="text-sm text-primary hover:underline cursor-pointer"
-            onClick={() => setActiveView('summary')}
-          >
-            + {roundSummaryQueue.length - 6} more in queue • View full queue →
-          </a>
+          <span className="text-sm text-muted-foreground">
+            + {roundSummaryQueue.length - 6} more in queue
+          </span>
         </div>
       )}
     </div>

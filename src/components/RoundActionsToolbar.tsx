@@ -36,7 +36,7 @@ export const RoundActionsToolbar: FC<RoundActionsToolbarProps> = ({
   size = 'sm'
 }) => {
   const isExtraSmall = size === 'xs';
-  const { rounds, updateRound, rerollRoundSummary } = useStore();
+  const { rounds, updateRound, rerollRoundSummary, processRoundSummaryQueue } = useStore();
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
 
   const handleReroll = async (e: React.MouseEvent) => {
@@ -66,51 +66,6 @@ export const RoundActionsToolbar: FC<RoundActionsToolbarProps> = ({
       return;
     }
     
-    // Try to get content if it's not already available
-    let roundContent = round.rawContent;
-    if (!roundContent) {
-      // Get processed content from store
-      const { processedContent, updateRound } = useStore.getState();
-      if (!processedContent) {
-        console.error('No processed content available in store');
-        toast.error("Cannot reroll: no content available. Try uploading a file first.");
-        return;
-      }
-      
-      // Extract the content for this round from the processed content
-      const lines = processedContent.split('\n');
-      roundContent = lines.slice(round.startLine, round.endLine + 1).join('\n');
-      
-      // Update the round with the raw content and extracted blocks
-      if (roundContent) {
-        // Extract user and dungeon master content
-        const { userContent, dmContent } = extractBlocks(roundContent);
-        
-        // Update the round in the store
-        updateRound(roundIndex, {
-          rawContent: roundContent,
-          userText: userContent,
-          dmText: dmContent
-        });
-      } else {
-        console.error(`Could not extract content for round ${roundIndex}`);
-        toast.error("Cannot reroll: failed to extract content for this round");
-        return;
-      }
-    }
-
-    // Extract DM content from the raw content
-    const { dmContent } = extractBlocks(roundContent);
-    console.log('Extracted DM content:', { length: dmContent?.length || 0, preview: dmContent?.substring(0, 50) });
-    
-    if (!dmContent) {
-      toast.error("Cannot reroll: no dungeon master content found in the round");
-      return;
-    }
-
-    // Prepare the prompt by replacing the placeholder
-    const prompt = roundPrompt.replace("[[narrative-excerpt]]", dmContent);
-    
     // Call onReroll to handle any UI updates
     if (typeof onReroll === 'function') {
       onReroll(roundIndex);
@@ -120,63 +75,13 @@ export const RoundActionsToolbar: FC<RoundActionsToolbarProps> = ({
     
     // Mark the round as being processed and enqueue it for summarization
     rerollRoundSummary(roundIndex);
-    updateRound(roundIndex, { summaryStatus: 'inProgress' });
     
+    // Set UI state
     setIsGenerating(true);
     
+    // Start processing the queue
     try {
-      // Create AbortController for fetch
-      const abortController = new AbortController();
-      
-      // Call the API
-      const response = await fetch('http://localhost:4000/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-        signal: abortController.signal
-      });
-
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
-      }
-
-      // Handle streaming response
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('Failed to get response stream reader');
-      }
-
-      const decoder = new TextDecoder();
-      let done = false;
-      let summary = '';
-
-      while (!done) {
-        const { value, done: doneReading } = await reader.read();
-        done = doneReading;
-
-        if (value) {
-          const text = decoder.decode(value, { stream: !done });
-          summary += text;
-          
-          // Update the summary as it comes in
-          updateRound(roundIndex, { 
-            summary: summary.trim(),
-            summaryStatus: 'inProgress'
-          });
-        }
-      }
-
-      // Update with completed status
-      updateRound(roundIndex, { 
-        summary: summary.trim(),
-        summaryStatus: 'completed'
-      });
-      
-      toast.success(`Round ${roundIndex + 1} summary updated`);
-    } catch (error) {
-      console.error('Error generating summary:', error);
-      updateRound(roundIndex, { summaryStatus: 'failed' });
-      toast.error(`Failed to generate summary: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      await processRoundSummaryQueue();
     } finally {
       setIsGenerating(false);
     }

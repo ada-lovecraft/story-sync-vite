@@ -3,6 +3,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Chapter, Round, SummaryQueueItem } from "@/store"
 import { ChapterTable } from './ChapterTable'
 import { ChapterHeader } from './ChapterHeader'
+import { useStore } from "@/store"
+import { toast } from "sonner"
 
 interface ChapterCardProps {
   chapter: Chapter
@@ -33,6 +35,32 @@ export const ChapterCard: FC<ChapterCardProps> = ({
   roundSummaryQueue = [],
   allChapters = []
 }) => {
+  const { enqueueRoundSummary, processRoundSummaryQueue } = useStore()
+
+  const summarizeAllRounds = async () => {
+    // Get rounds in this chapter
+    const chapterRounds = rounds.filter(round => 
+      round.roundIndex >= chapter.roundsRange[0] && 
+      round.roundIndex <= chapter.roundsRange[1]
+    )
+    
+    // Filter out omitted rounds
+    const eligibleRounds = chapterRounds.filter(round => 
+      !chapter.omit.includes(round.roundIndex)
+    )
+    
+    // Add each eligible round to the queue
+    eligibleRounds.forEach(round => {
+      enqueueRoundSummary(round.roundIndex)
+    })
+    
+    // Start processing the queue
+    processRoundSummaryQueue()
+    
+    // Show confirmation toast
+    toast.success(`Added ${eligibleRounds.length} rounds to the summarization queue`)
+  }
+
   return (
     <Card>
       <ChapterHeader

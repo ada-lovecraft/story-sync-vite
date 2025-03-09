@@ -6,7 +6,6 @@ import {
   ReaderIcon, 
   DownloadIcon, 
   UploadIcon,
-  ChatBubbleIcon,
   DashboardIcon
 } from "@radix-ui/react-icons"
 import { Button } from "@/components/ui/button"
@@ -17,15 +16,15 @@ import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
 interface SidebarProps {
-  onNavigation?: (view: 'upload' | 'fine-tuning' | 'summary') => void
+  onNavigation?: (view: 'upload' | 'fine-tuning') => void
 }
 
 export const Sidebar: FC<SidebarProps> = ({ onNavigation }) => {
   const [stateViewOpen, setStateViewOpen] = useState(false);
-  const { chapters, rounds, roundSummaryQueue } = useStore();
+  const { chapters, rounds } = useStore();
   
   // Handle navigation
-  const navigateTo = (view: 'upload' | 'fine-tuning' | 'summary') => {
+  const navigateTo = (view: 'upload' | 'fine-tuning') => {
     if (onNavigation) {
       onNavigation(view);
     }
@@ -60,7 +59,6 @@ export const Sidebar: FC<SidebarProps> = ({ onNavigation }) => {
     toast.success("Configuration downloaded successfully")
   }
   
-  const hasSummaryItems = roundSummaryQueue.length > 0;
   const hasRoundsAndChapters = rounds.length > 0 && chapters.length > 0;
   
   return (
@@ -106,21 +104,6 @@ export const Sidebar: FC<SidebarProps> = ({ onNavigation }) => {
                 {hasRoundsAndChapters && (
                   <span className="ml-auto bg-primary/10 text-primary text-xs py-0.5 px-1.5 rounded-full">
                     {chapters.length}
-                  </span>
-                )}
-              </Button>
-              
-              <Button 
-                variant="ghost" 
-                className={cn("w-full justify-start", !hasRoundsAndChapters && "opacity-50")}
-                onClick={() => hasRoundsAndChapters ? navigateTo('summary') : toast.error("Upload a file first to generate chapters")}
-                disabled={!hasRoundsAndChapters}
-              >
-                <ChatBubbleIcon className="mr-2 h-4 w-4" />
-                Summarize Rounds
-                {hasSummaryItems && (
-                  <span className="ml-auto bg-primary/10 text-primary text-xs py-0.5 px-1.5 rounded-full">
-                    {roundSummaryQueue.length}
                   </span>
                 )}
               </Button>

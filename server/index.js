@@ -11,9 +11,10 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.post('/generate', async (req, res) => {
-    const { prompt } = req.body;
+    const { prompt, model } = req.body;
+    console.log('received request:', { promptLength: prompt.length, model });
     const result = streamText({
-        model: openai('gpt-4o'),
+        model: openai(model || 'gpt-4o'),
         prompt,
     });
     result.pipeTextStreamToResponse(res);

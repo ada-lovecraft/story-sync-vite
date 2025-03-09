@@ -26,7 +26,7 @@ import { Button } from '@/components/ui/button'
 
 interface MainLayoutProps {
   children: ReactNode
-  activeView: 'upload' | 'fine-tuning' | 'summary' | 'store-test' | 'code-demo' | 'chapter-preview' | 'tools' | 'meta-prompter'
+  activeView: 'upload' | 'fine-tuning' | 'store-test' | 'code-demo' | 'chapter-preview' | 'tools' | 'meta-prompter' | 'meta-prompt-tester'
   setActiveView: (view: any) => void
   onSidebarNavigation: (view: any) => void
 }
@@ -54,8 +54,6 @@ export function MainLayout({
         return 'Upload Area'
       case 'fine-tuning':
         return 'Fine Tuning'
-      case 'summary':
-        return 'Summarization Queue'
       case 'store-test':
         return 'Store Test'
       case 'code-demo':
@@ -66,6 +64,8 @@ export function MainLayout({
         return 'Tools'
       case 'meta-prompter':
         return 'Meta Prompter'
+      case 'meta-prompt-tester':
+        return 'MetaPrompt Tester'
       default:
         return 'Dashboard'
     }

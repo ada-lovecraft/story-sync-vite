@@ -2,24 +2,58 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import { UploadArea } from '@/components/upload-area'
 import { FineTuningView } from '@/components/fine-tuning-view'
-import { SummarizationQueueView } from '@/components/summarization-queue-view'
 import StoreTest from '@/components/StoreTest'
 import { CodeDemo } from '@/components/code-demo'
 import { ChapterPreviewDemo } from '@/components/ChapterPreviewDemo'
 import { ToolsView } from '@/components/ToolsView'
 import { MetaPrompter } from '@/components/MetaPrompter'
+import { MetaPromptTester } from '@/components/MetaPromptTester'
 import { MainLayout } from '@/components/MainLayout'
 import { SidebarProvider } from '@/components/ui/sidebar'
 
-type ViewType = 'upload' | 'fine-tuning' | 'summary' | 'store-test' | 'code-demo' | 'chapter-preview' | 'tools' | 'meta-prompter'
+type ViewType = 'upload' | 'fine-tuning' | 'store-test' | 'code-demo' | 'chapter-preview' | 'tools' | 'meta-prompter' | 'meta-prompt-tester'
+
+// localStorage key for persisting the active view
+const ACTIVE_VIEW_STORAGE_KEY = 'story-sync-active-view'
 
 function App() {
   const [activeView, setActiveView] = useState<ViewType>('upload')
+  const [isInitialized, setIsInitialized] = useState(false)
 
   // Set dark mode on load
   useEffect(() => {
     document.documentElement.classList.add('dark')
   }, [])
+
+  // Hydrate activeView from localStorage on mount
+  useEffect(() => {
+    // Only access localStorage on the client side
+    if (typeof window !== 'undefined') {
+      const savedView = localStorage.getItem(ACTIVE_VIEW_STORAGE_KEY) as ViewType | null
+      
+      // If there's a valid saved view, use it
+      if (savedView && isValidViewType(savedView)) {
+        setActiveView(savedView)
+      }
+      
+      setIsInitialized(true)
+    }
+  }, [])
+
+  // Persist activeView to localStorage when it changes
+  useEffect(() => {
+    // Only update localStorage after initial hydration and on the client side
+    if (isInitialized && typeof window !== 'undefined') {
+      localStorage.setItem(ACTIVE_VIEW_STORAGE_KEY, activeView)
+    }
+  }, [activeView, isInitialized])
+
+  // Type guard to validate the view type
+  function isValidViewType(view: string): view is ViewType {
+    return ['upload', 'fine-tuning', 'store-test', 'code-demo', 
+            'chapter-preview', 'tools', 'meta-prompter', 
+            'meta-prompt-tester'].includes(view)
+  }
 
   // Handle sidebar navigation
   const handleSidebarNavigation = (view: ViewType) => {
@@ -38,8 +72,6 @@ function App() {
         return <UploadArea onNext={handleNextFromUpload} />
       case 'fine-tuning':
         return <FineTuningView />
-      case 'summary':
-        return <SummarizationQueueView />
       case 'store-test':
         return <StoreTest />
       case 'code-demo':
@@ -50,6 +82,8 @@ function App() {
         return <ToolsView />
       case 'meta-prompter':
         return <MetaPrompter />
+      case 'meta-prompt-tester':
+        return <MetaPromptTester />
       default:
         return <UploadArea onNext={handleNextFromUpload} />
     }

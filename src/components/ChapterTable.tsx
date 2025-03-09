@@ -1,6 +1,6 @@
-import { FC, useState } from 'react'
+import { FC, useState, useMemo } from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Chapter, Round } from "@/store"
+import { Chapter, Round, SummaryQueueItem } from "@/store"
 import { cn } from "@/lib/utils"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { RoundActionsToolbar } from './RoundActionsToolbar'
@@ -8,6 +8,9 @@ import { StatusBadge } from './StatusBadge'
 import { RoundDetailsDrawer } from './RoundDetailsDrawer'
 import { useStore } from '@/store'
 import { extractBlocks } from '@/utils/content-transformation'
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { PlayIcon, PauseIcon, RefreshCwIcon } from "lucide-react"
 
 interface ChapterTableProps {
   chapter: Chapter
@@ -39,7 +42,23 @@ export const ChapterTable: FC<ChapterTableProps> = ({
   const [selectedRound, setSelectedRound] = useState<Round | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [currentChapterIndex, setCurrentChapterIndex] = useState(chapterIndex)
-  const { processedContent } = useStore()
+  const { 
+    processedContent, 
+    roundSummaryQueue, 
+    enqueueRoundSummary, 
+    dequeueRoundSummary,
+    updateSummaryStatus,
+    processRoundSummaryQueue 
+  } = useStore()
+
+  // Compute local queue for just this chapter's rounds
+  const chapterQueue = useMemo(() => {
+    return roundSummaryQueue.filter(item => {
+      // Check if this queue item corresponds to a round in this chapter
+      const [start, end] = chapter.roundsRange;
+      return item.type === 'round' && item.id >= start && item.id <= end;
+    });
+  }, [roundSummaryQueue, chapter.roundsRange]);
 
   // Get rounds for a specific chapter
   const getChapterRounds = () => {
@@ -87,6 +106,49 @@ export const ChapterTable: FC<ChapterTableProps> = ({
   const getPaddedIndex = (index: number) => {
     const magnitude = rounds.length.toString().length + 1
     return index.toString().padStart(magnitude, '0')
+  }
+
+  // Check if a round is in the summarization queue
+  const isRoundInQueue = (roundIndex: number): SummaryQueueItem | undefined => {
+    return roundSummaryQueue.find(
+      item => item.id === roundIndex && item.type === 'round'
+    );
+  }
+
+  // Add a round to the summarization queue
+  const addToQueue = (roundIndex: number) => {
+    enqueueRoundSummary(roundIndex);
+  }
+
+  // Remove a round from the summarization queue
+  const removeFromQueue = (roundIndex: number) => {
+    dequeueRoundSummary(roundIndex);
+  }
+
+  // Summarize all rounds in the chapter
+  const summarizeAllRounds = () => {
+    const chapterRounds = getChapterRounds();
+    // Filter out omitted rounds
+    const eligibleRounds = chapterRounds.filter(round => !isRoundOmitted(round.roundIndex));
+    
+    // Add each eligible round to the queue
+    eligibleRounds.forEach(round => {
+      enqueueRoundSummary(round.roundIndex);
+    });
+    
+    // Start processing the queue
+    processRoundSummaryQueue();
+  }
+
+  // Get the queue statistics for this chapter
+  const getQueueStats = () => {
+    const total = chapterQueue.length;
+    const pending = chapterQueue.filter(item => item.status === 'pending').length;
+    const inProgress = chapterQueue.filter(item => item.status === 'inProgress').length;
+    const completed = chapterQueue.filter(item => item.status === 'completed').length;
+    const failed = chapterQueue.filter(item => item.status === 'failed').length;
+    
+    return { total, pending, inProgress, completed, failed };
   }
 
   const handleRoundClick = (round: Round) => {
@@ -216,8 +278,64 @@ export const ChapterTable: FC<ChapterTableProps> = ({
     return false;
   }
 
+  // Queue stats for display
+  const queueStats = getQueueStats();
+  const hasQueuedRounds = queueStats.total > 0;
+
   return (
     <>
+      {/* Chapter Queue Summary and Controls */}
+      {hasQueuedRounds && (
+        <div className="mb-4 p-2 rounded-md border bg-muted/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium">Round Queue:</span>
+              <Badge variant="outline" className="bg-background">
+                {queueStats.total} round{queueStats.total !== 1 ? 's' : ''}
+              </Badge>
+              {queueStats.inProgress > 0 && (
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                  {queueStats.inProgress} processing
+                </Badge>
+              )}
+              {queueStats.completed > 0 && (
+                <Badge variant="secondary" className="bg-green-100 text-green-800">
+                  {queueStats.completed} completed
+                </Badge>
+              )}
+              {queueStats.failed > 0 && (
+                <Badge variant="secondary" className="bg-red-100 text-red-800">
+                  {queueStats.failed} failed
+                </Badge>
+              )}
+            </div>
+            <div className="flex space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={processRoundSummaryQueue}
+                disabled={queueStats.pending === 0}
+              >
+                <PlayIcon className="h-4 w-4 mr-1" />
+                Process Queue
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      <div className="mb-2 flex justify-end">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={summarizeAllRounds}
+          className="text-xs"
+        >
+          <RefreshCwIcon className="h-3 w-3 mr-1" />
+          Summarize All Rounds
+        </Button>
+      </div>
+
       <ScrollArea className="h-[400px]">
         <Table>
           <TableHeader>
@@ -229,14 +347,20 @@ export const ChapterTable: FC<ChapterTableProps> = ({
           </TableHeader>
           <TableBody>
             {getChapterRounds().map((round) => {
-              const isOmitted = isRoundOmitted(round.roundIndex)
+              const isOmitted = isRoundOmitted(round.roundIndex);
+              const queueItem = isRoundInQueue(round.roundIndex);
+              const isQueued = !!queueItem;
+              
               return (
                 <TableRow
                   key={round.roundIndex}
                   className={cn(
                     "py-1",
                     isOmitted && "opacity-50 bg-muted/50 text-muted-foreground line-through",
-                    !isOmitted && "cursor-pointer hover:bg-muted/50"
+                    !isOmitted && "cursor-pointer hover:bg-muted/50",
+                    isQueued && queueItem.status === 'inProgress' && "bg-blue-50",
+                    isQueued && queueItem.status === 'completed' && "bg-green-50",
+                    isQueued && queueItem.status === 'failed' && "bg-red-50"
                   )}
                   onClick={() => !isOmitted && handleRoundClick(round)}
                 >
@@ -253,23 +377,75 @@ export const ChapterTable: FC<ChapterTableProps> = ({
                     {isOmitted ? (
                       <span className="italic">Omitted from summarization</span>
                     ) : (
-                      round.summary || "No summary available"
+                      <div className="flex items-center space-x-2">
+                        <span className="truncate">{round.summary || "No summary available"}</span>
+                        {isQueued && (
+                          <Badge 
+                            variant="outline" 
+                            className={cn(
+                              "text-xs ml-1",
+                              queueItem.status === 'pending' && "bg-yellow-50 text-yellow-800",
+                              queueItem.status === 'inProgress' && "bg-blue-50 text-blue-800", 
+                              queueItem.status === 'completed' && "bg-green-50 text-green-800",
+                              queueItem.status === 'failed' && "bg-red-50 text-red-800"
+                            )}
+                          >
+                            {queueItem.status === 'pending' && "Queued"}
+                            {queueItem.status === 'inProgress' && "Processing"}
+                            {queueItem.status === 'completed' && "Processed"}
+                            {queueItem.status === 'failed' && "Failed"}
+                          </Badge>
+                        )}
+                      </div>
                     )}
                   </TableCell>
-                  <TableCell className="text-right py-1 px-2">
-                    <RoundActionsToolbar
-                      size="xs"
-                      roundIndex={round.roundIndex}
-                      chapterIndex={chapterIndex}
-                      isFirstChapter={isFirstChapter}
-                      isLastChapter={isLastChapter}
-                      isOmitted={isOmitted}
-                      onSlideUp={onSlideUp}
-                      onSlideDown={onSlideDown}
-                      onSplit={onSplit}
-                      onOmit={onOmit}
-                      onReroll={onReroll}
-                    />
+                  <TableCell className="text-right py-1 px-2 min-w-[120px]">
+                    <div className="flex justify-end space-x-1">
+                      {!isOmitted && (
+                        <>
+                          {isQueued ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeFromQueue(round.roundIndex);
+                              }}
+                              className="h-7 px-2 text-xs"
+                            >
+                              <PauseIcon className="h-3 w-3 mr-1" />
+                              Remove
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                addToQueue(round.roundIndex);
+                              }}
+                              className="h-7 px-2 text-xs"
+                            >
+                              <PlayIcon className="h-3 w-3 mr-1" />
+                              Queue
+                            </Button>
+                          )}
+                        </>
+                      )}
+                      <RoundActionsToolbar
+                        size="xs"
+                        roundIndex={round.roundIndex}
+                        chapterIndex={chapterIndex}
+                        isFirstChapter={isFirstChapter}
+                        isLastChapter={isLastChapter}
+                        isOmitted={isOmitted}
+                        onSlideUp={onSlideUp}
+                        onSlideDown={onSlideDown}
+                        onSplit={onSplit}
+                        onOmit={onOmit}
+                        onReroll={onReroll}
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               )

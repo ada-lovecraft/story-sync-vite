@@ -49,12 +49,6 @@ export const appData = {
       action: 'fine-tuning'
     },
     {
-      title: "Summary",
-      url: "#",
-      icon: Inbox,
-      action: 'summary'
-    },
-    {
       title: "Demo",
       url: "#",
       icon: Bot,
@@ -99,6 +93,12 @@ export const appData = {
       url: "#",
       icon: Bot,
       action: 'meta-prompter'
+    },
+    {
+      name: "MetaPrompt Tester",
+      url: "#",
+      icon: Bot,
+      action: 'meta-prompt-tester'
     },
     {
       name: "Story Project 1",

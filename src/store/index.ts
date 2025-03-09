@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
+import { extractBlocks } from '@/utils/content-transformation';
+import { roundPrompt } from '@/data/round-prompt';
 
 // Define types for each slice
 export interface Round {
@@ -67,6 +69,8 @@ interface StoreState {
   rerollRoundSummary: (roundIndex: number) => void;
   enqueueChapterSummary: (chapterIndex: number) => void;
   updateSummaryStatus: (id: number, type: 'round' | 'chapter', status: 'pending' | 'inProgress' | 'completed' | 'failed') => void;
+  processRoundSummaryQueue: () => Promise<void>;
+  isProcessingQueue: boolean;
 
   // Reset Store
   resetStore: () => void;
@@ -84,6 +88,7 @@ export const useStore = create<StoreState>()(
         chapters: [],
         roundSummaryQueue: [],
         chapterSummaryQueue: [],
+        isProcessingQueue: false,
 
         // File Upload & Raw Content Actions
         setRawFileContent: (content) => set({ rawFileContent: content }),
@@ -409,6 +414,199 @@ export const useStore = create<StoreState>()(
           }
         }),
 
+        // Process Queue
+        processRoundSummaryQueue: async () => {
+          const state = useStore.getState();
+          
+          // If queue is empty or already processing, don't proceed
+          if (state.roundSummaryQueue.length === 0 || state.isProcessingQueue) {
+            return;
+          }
+          
+          // Set processing flag
+          set({ isProcessingQueue: true });
+          
+          try {
+            // Get the first item in the queue (highest priority)
+            const queueItem = state.roundSummaryQueue[0];
+            
+            if (queueItem.type !== 'round') {
+              // Skip non-round items (would be handled by a different processor)
+              return;
+            }
+            
+            const roundIndex = queueItem.id;
+            
+            // Get the round
+            const round = state.rounds.find(r => r.roundIndex === roundIndex);
+            
+            if (!round) {
+              console.error(`Round with index ${roundIndex} not found in rounds array`);
+              // Remove from queue and continue
+              set((state) => ({
+                roundSummaryQueue: state.roundSummaryQueue.filter((_, i) => i !== 0),
+                isProcessingQueue: false
+              }));
+              return;
+            }
+            
+            // Extract roundContent
+            let roundContent = round.rawContent;
+            if (!roundContent) {
+              // Get processed content from store
+              const processedContent = state.processedContent;
+              if (!processedContent) {
+                console.error('No processed content available in store');
+                return;
+              }
+              
+              // Extract the content for this round from the processed content
+              const lines = processedContent.split('\n');
+              roundContent = lines.slice(round.startLine, round.endLine + 1).join('\n');
+              
+              // Update the round with the raw content
+              if (roundContent) {
+                // Extract user and dungeon master content
+                const { userContent, dmContent } = extractBlocks(roundContent);
+                
+                // Update the round in the store
+                state.updateRound(roundIndex, {
+                  rawContent: roundContent,
+                  userText: userContent,
+                  dmText: dmContent
+                });
+              } else {
+                console.error(`Could not extract content for round ${roundIndex}`);
+                // Update queue item status to failed
+                set((state) => {
+                  const newQueue = [...state.roundSummaryQueue];
+                  newQueue.shift(); // Remove the first item (current)
+                  return {
+                    roundSummaryQueue: newQueue,
+                    isProcessingQueue: false
+                  };
+                });
+                return;
+              }
+            }
+            
+            // Extract DM content from the raw content
+            const { dmContent } = extractBlocks(roundContent);
+            if (!dmContent) {
+              console.error("No dungeon master content found in the round");
+              // Update queue item status to failed
+              set((state) => {
+                const newQueue = [...state.roundSummaryQueue];
+                newQueue.shift(); // Remove the first item (current)
+                return {
+                  roundSummaryQueue: newQueue,
+                  isProcessingQueue: false
+                };
+              });
+              return;
+            }
+            
+            // Update round status to inProgress
+            state.updateRound(roundIndex, { summaryStatus: 'inProgress' });
+            
+            // Prepare the prompt by replacing the placeholder
+            const prompt = roundPrompt.replace("[[narrative-excerpt]]", dmContent);
+            
+            // Call the API
+            const response = await fetch('http://localhost:4000/generate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ prompt, model: 'gpt-4o-mini' }),
+            });
+
+            if (!response.ok) {
+              throw new Error(`Server error: ${response.status}`);
+            }
+
+            // Handle streaming response
+            const reader = response.body?.getReader();
+            if (!reader) {
+              throw new Error('Failed to get response stream reader');
+            }
+
+            
+            const decoder = new TextDecoder();
+            let done = false;
+            let summary = '';
+            state.updateRound(roundIndex, { summary: '', summaryStatus: 'inProgress' });
+            while (!done) {
+              const { value, done: doneReading } = await reader.read();
+              done = doneReading;
+
+              if (value) {
+                const text = decoder.decode(value, { stream: !done });
+                summary += text;
+                
+                // Update the summary as it comes in
+                state.updateRound(roundIndex, { 
+                  summary: summary.trim(),
+                  summaryStatus: 'inProgress'
+                });
+              }
+            }
+
+            // Update with completed status
+            state.updateRound(roundIndex, { 
+              summary: summary.trim(),
+              summaryStatus: 'completed'
+            });
+            
+            // Update queue - remove the processed item
+            set((state) => {
+              const newQueue = [...state.roundSummaryQueue];
+              newQueue.shift(); // Remove the first item (current)
+              
+              // Continue processing if there are more items
+              if (newQueue.length > 0) {
+                requestAnimationFrame(() => {
+                  useStore.getState().processRoundSummaryQueue();
+                });
+              }
+              
+              return {
+                roundSummaryQueue: newQueue,
+                isProcessingQueue: false
+              };
+            });
+            
+          } catch (error) {
+            console.error('Error processing queue:', error);
+            
+            // Get the current queue item
+            const state = useStore.getState();
+            const currentItem = state.roundSummaryQueue[0];
+            
+            if (currentItem && currentItem.type === 'round') {
+              // Update the round status to failed
+              state.updateRound(currentItem.id, { summaryStatus: 'failed' });
+            }
+            
+            // Remove failed item and reset processing flag
+            set((state) => {
+              const newQueue = [...state.roundSummaryQueue];
+              newQueue.shift(); // Remove the failed item
+              
+              // Continue processing if there are more items
+              if (newQueue.length > 0) {
+                requestAnimationFrame(() => {
+                  useStore.getState().processRoundSummaryQueue();
+                });
+              }
+              
+              
+              return {
+                roundSummaryQueue: newQueue,
+                isProcessingQueue: false
+              };
+            });
+          }
+        },
+        
         // Reset Store
         resetStore: () => set({
           rawFileContent: null,
@@ -416,8 +614,9 @@ export const useStore = create<StoreState>()(
           rounds: [],
           chapters: [],
           roundSummaryQueue: [],
-          chapterSummaryQueue: []
-        })
+          chapterSummaryQueue: [],
+          isProcessingQueue: false
+        }),
       }),
       {
         name: 'story-sync-storage', // Name for the localStorage key

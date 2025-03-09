@@ -15,10 +15,25 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { ChevronLeft, ChevronRight, BookOpen, AlignJustify } from 'lucide-react'
+import { ChevronLeft, ChevronRight, BookOpen, AlignJustify, FileText } from 'lucide-react'
 import { extractBlocks } from '@/utils/content-transformation'
 import { Badge } from '@/components/ui/badge'
 import { useStore } from '@/store'
+import { cn } from '@/lib/utils'
+import { CopyableText } from './ui/copyable-text'
+
+// Create a DrawerBody component similar to DrawerHeader and DrawerFooter
+const DrawerBody: FC<React.HTMLAttributes<HTMLDivElement>> = ({ 
+    className, 
+    ...props 
+}) => {
+    return (
+        <div
+            className={cn("flex-1 overflow-auto", className)}
+            {...props}
+        />
+    )
+}
 
 interface RoundDetailsDrawerProps {
     round: Round | null
@@ -174,10 +189,11 @@ export const RoundDetailsDrawer: FC<RoundDetailsDrawerProps> = ({
     return (
         <Drawer open={open} onOpenChange={onClose}>
             <DrawerContent className="h-[85vh] max-h-[85vh] flex flex-col">
-                <DrawerHeader className="space-y-2 flex-shrink-0">
+                <DrawerHeader className="flex-shrink-0">
                     <div className="flex items-center justify-between">
-                        <div>
+                        <div className="space-y-1">
                             <DrawerTitle className="flex items-center gap-2">
+                                <StatusBadge status={round.summaryStatus || 'pending'} />
                                 Round <span className="font-mono text-sm font-extralight text-muted-foreground">{getPaddedRoundIndex(round.roundIndex)}</span>
                             </DrawerTitle>
                         </div>
@@ -190,54 +206,76 @@ export const RoundDetailsDrawer: FC<RoundDetailsDrawerProps> = ({
                                 <AlignJustify className="h-3 w-3" />
                                 {round.lineCount} lines
                             </Badge>
-                            <StatusBadge status={round.summaryStatus || 'pending'} />
                         </div>
                     </div>
                 </DrawerHeader>
-                <Separator className="flex-shrink-0" />
-                <ScrollArea className="flex-grow overflow-auto">
-                    <div className="p-4">
-                        {showToolbar && (
-                            <div className="flex justify-end mb-4">
-                                <RoundActionsToolbar
-                                    size="sm"
-                                    roundIndex={round.roundIndex}
-                                    chapterIndex={currentChapterIndex}
-                                    isFirstChapter={isFirst}
-                                    isLastChapter={isLast}
-                                    isOmitted={roundIsOmitted}
-                                    onSlideUp={onSlideUp}
-                                    onSlideDown={onSlideDown}
-                                    onSplit={onSplit}
-                                    onOmit={onOmit}
-                                    onReroll={onReroll}
-                                />
-                            </div>
+                
+                <DrawerBody className="p-4">
+                    {/* Toolbar Section */}
+                    {showToolbar && (
+                        <div className="flex justify-end mb-4">
+                            <RoundActionsToolbar
+                                size="sm"
+                                roundIndex={round.roundIndex}
+                                chapterIndex={currentChapterIndex}
+                                isFirstChapter={isFirst}
+                                isLastChapter={isLast}
+                                isOmitted={roundIsOmitted}
+                                onSlideUp={onSlideUp}
+                                onSlideDown={onSlideDown}
+                                onSplit={onSplit}
+                                onOmit={onOmit}
+                                onReroll={onReroll}
+                            />
+                        </div>
+                    )}
+                    
+                    {/* Grid Layout */}
+                    <div className="grid grid-cols-1 gap-4">
+                        {/* Full-width Summary Section */}
+                        {round.summary && (
+                            <CopyableText 
+                                text={round.summary}
+                                label="Round Summary"
+                                icon={<FileText className="h-4 w-4" />}
+                                variant="muted"
+                                copySuccessMessage="Round summary copied to clipboard!"
+                            />
                         )}
+                        
+                        {/* Two-column Grid for Text Areas */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="user-text">User</Label>
-                                <Textarea
-                                    id="user-text"
-                                    className="min-h-[300px] font-mono text-sm"
-                                    placeholder="User text content..."
-                                    value={userContent}
-                                    readOnly
-                                />
+                                <div className="border rounded-md h-[350px]">
+                                    <ScrollArea className="h-full">
+                                        <CopyableText
+                                            text={userContent}
+                                            variant="outline"
+                                            textWrapper="pre"
+                                            className="border-0 rounded-none font-mono text-sm"
+                                            copySuccessMessage="User text copied to clipboard!"
+                                        />
+                                    </ScrollArea>
+                                </div>
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="dm-text">Dungeon Master</Label>
-                                <Textarea
-                                    id="dm-text"
-                                    className="min-h-[300px] font-mono text-sm"
-                                    placeholder="Dungeon Master text content..."
-                                    value={dmContent}
-                                    readOnly
-                                />
+                                <div className="border rounded-md h-[350px]">
+                                    <ScrollArea className="h-full">
+                                        <CopyableText
+                                            text={dmContent}
+                                            variant="outline"
+                                            textWrapper="pre"
+                                            className="border-0 rounded-none font-mono text-sm"
+                                            copySuccessMessage="DM text copied to clipboard!"
+                                        />
+                                    </ScrollArea>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </ScrollArea>
+                </DrawerBody>
                 <DrawerFooter className="pt-2 flex-shrink-0">
                     <div className="flex justify-between w-full">
                         <Button
