@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react'
+import { FC, useEffect, useState, memo } from 'react'
 import {
     Drawer,
     DrawerContent,
@@ -21,6 +21,9 @@ import { Badge } from '@/components/ui/badge'
 import { useStore } from '@/store'
 import { cn } from '@/lib/utils'
 import { CopyableText } from './ui/copyable-text'
+// Import optimized components and selectors
+import { StreamingSummary } from './StreamingSummary'
+import { useChapter, useStreamingState } from '@/store/selectors'
 
 // Create a DrawerBody component similar to DrawerHeader and DrawerFooter
 const DrawerBody: FC<React.HTMLAttributes<HTMLDivElement>> = ({ 
@@ -31,6 +34,22 @@ const DrawerBody: FC<React.HTMLAttributes<HTMLDivElement>> = ({
         <div
             className={cn("flex-1 overflow-auto", className)}
             {...props}
+        />
+    )
+}
+
+// Create a component for streaming summary that wraps CopyableText
+const StreamingSummaryWithCopy: FC<{ roundIndex: number }> = ({ roundIndex }) => {
+    // Use the streaming state hook to get the current text
+    const { text, isStreaming } = useStreamingState(roundIndex)
+    
+    return (
+        <CopyableText 
+            text={text || "No summary available"}
+            label={isStreaming ? "Round Summary (Streaming...)" : "Round Summary"}
+            icon={<FileText className="h-4 w-4" />}
+            variant="muted"
+            copySuccessMessage="Round summary copied to clipboard!"
         />
     )
 }
@@ -53,7 +72,7 @@ interface RoundDetailsDrawerProps {
     onNext?: () => void
 }
 
-export const RoundDetailsDrawer: FC<RoundDetailsDrawerProps> = ({
+const RoundDetailsDrawerComponent: FC<RoundDetailsDrawerProps> = ({
     round,
     open,
     onClose,
@@ -74,6 +93,9 @@ export const RoundDetailsDrawer: FC<RoundDetailsDrawerProps> = ({
     const [userContent, setUserContent] = useState<string>('');
     const [dmContent, setDmContent] = useState<string>('');
     const { chapters } = useStore();
+
+    // If drawer is not open or there's no round, don't render anything
+    if (!open || !round) return null;
 
     // Find the actual chapter index for this round
     const findChapterForRound = (roundIndex: number) => {
@@ -177,8 +199,6 @@ export const RoundDetailsDrawer: FC<RoundDetailsDrawerProps> = ({
         }
     }, [round]);
 
-    if (!round) return null
-
     // Get the current chapter information
     const { index: currentChapterIndex, isFirst, isLast, isOmitted: roundIsOmitted } = getChapterInfo();
 
@@ -232,16 +252,8 @@ export const RoundDetailsDrawer: FC<RoundDetailsDrawerProps> = ({
                     
                     {/* Grid Layout */}
                     <div className="grid grid-cols-1 gap-4">
-                        {/* Full-width Summary Section */}
-                        {round.summary && (
-                            <CopyableText 
-                                text={round.summary}
-                                label="Round Summary"
-                                icon={<FileText className="h-4 w-4" />}
-                                variant="muted"
-                                copySuccessMessage="Round summary copied to clipboard!"
-                            />
-                        )}
+                        {/* Replace the summary section with our streaming component */}
+                        <StreamingSummaryWithCopy roundIndex={round.roundIndex} />
                         
                         {/* Two-column Grid for Text Areas */}
                         <div className="grid grid-cols-2 gap-4">
@@ -304,4 +316,32 @@ export const RoundDetailsDrawer: FC<RoundDetailsDrawerProps> = ({
             </DrawerContent>
         </Drawer>
     )
-} 
+}
+
+// Custom areEqual function for memoization
+function areEqual(prevProps: RoundDetailsDrawerProps, nextProps: RoundDetailsDrawerProps) {
+    // If the drawer is closed in both cases, don't re-render
+    if (!prevProps.open && !nextProps.open) return true;
+    
+    // If open state changes, we should re-render
+    if (prevProps.open !== nextProps.open) return false;
+    
+    // If round changes, we should re-render
+    if (prevProps.round?.roundIndex !== nextProps.round?.roundIndex) return false;
+    
+    // Check for other prop changes that should trigger a re-render
+    if (
+        prevProps.chapterIndex !== nextProps.chapterIndex ||
+        prevProps.isFirstChapter !== nextProps.isFirstChapter ||
+        prevProps.isLastChapter !== nextProps.isLastChapter ||
+        prevProps.isOmitted !== nextProps.isOmitted
+    ) {
+        return false;
+    }
+    
+    // Default to not re-rendering if nothing important changed
+    return true;
+}
+
+// Export the memoized component
+export const RoundDetailsDrawer = memo(RoundDetailsDrawerComponent, areEqual); 

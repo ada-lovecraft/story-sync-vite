@@ -63,32 +63,61 @@ export const UploadArea: FC<UploadAreaProps> = ({ onNext }) => {
 
     try {
       setIsProcessing(true)
+      console.log('🔍 Starting file processing', { fileName: file.name, fileSize: fileSizeKB + 'KB' })
 
       // Read file content
       const rawContent = await file.text()
+      console.log('📄 Raw content loaded', { 
+        contentLength: rawContent.length,
+        contentStartsWith: rawContent.substring(0, 100) + '...'
+      })
 
       // Calculate line count
       const lineCount = rawContent.split('\n').length
+      console.log('📊 Content stats', { lineCount })
+
+      // Clear any previous state to avoid weird interactions
+      console.log('🧹 Clearing previous state')
+      setRawFileContent('')
+      setProcessedContent('')
+      setRounds([])
+      setChapters([])
+
+      // Add a slight delay to allow state clearing
+      await new Promise(resolve => setTimeout(resolve, 100))
 
       // Store raw content in Zustand
+      console.log('💾 Storing raw content')
       setRawFileContent(rawContent)
 
       // Transform content according to requirements
+      console.log('🔄 Transforming content')
       const processedContent = transformContent(rawContent)
+      console.log('✅ Content transformed', { 
+        processedLength: processedContent.length,
+        processedStartsWith: processedContent.substring(0, 100) + '...'
+      })
 
       // Store processed content in Zustand
+      console.log('💾 Storing processed content')
       setProcessedContent(processedContent)
 
       // Parse content into rounds
+      console.log('🔄 Parsing content into rounds')
       const rounds = parseContentIntoRounds(processedContent)
+      console.log('✅ Content parsed into rounds', { roundCount: rounds.length })
 
       // Store rounds in Zustand
+      console.log('💾 Storing rounds')
       setRounds(rounds)
 
       // Group rounds into chapters
+      console.log('🔄 Grouping rounds into chapters')
       const chapters = groupRoundsIntoChapters(rounds)
+      console.log('✅ Rounds grouped into chapters', { chapterCount: chapters.length })
 
       // Store chapters in Zustand
+      console.log('💾 Storing chapters')
       setChapters(chapters)
 
       // Set file stats
@@ -99,10 +128,44 @@ export const UploadArea: FC<UploadAreaProps> = ({ onNext }) => {
         chapterCount: chapters.length
       })
 
+      console.log('✅ File processing complete', {
+        roundCount: rounds.length, 
+        chapterCount: chapters.length
+      })
+      
       toast.success(`File processed successfully: ${rounds.length} rounds, ${chapters.length} chapters`)
     } catch (error) {
-      console.error('Error processing file:', error)
-      toast.error('Error processing file. Please try again.')
+      console.error('❌ Error processing file:', error)
+      
+      // Try to get more detailed error information
+      let errorMessage = 'Error processing file. Please try again.';
+      
+      if (error instanceof Error) {
+        errorMessage = `${error.name}: ${error.message}`;
+        console.error('❌ Error stack:', error.stack);
+      }
+      
+      // Try to clear the store to avoid stuck state
+      try {
+        console.log('🧹 Attempting to reset store due to error')
+        setRawFileContent('')
+        setProcessedContent('')
+        setRounds([])
+        setChapters([])
+        
+        // Add debugging info to window object for troubleshooting
+        if (typeof window !== 'undefined') {
+          (window as any).lastUploadError = {
+            error,
+            timestamp: new Date().toISOString()
+          }
+          console.log('Added error info to window.lastUploadError for debugging')
+        }
+      } catch (clearError) {
+        console.error('❌ Failed to clear store after error:', clearError)
+      }
+      
+      toast.error(errorMessage)
     } finally {
       setIsProcessing(false)
     }

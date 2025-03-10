@@ -1,4 +1,4 @@
-import { FC, useState, useMemo } from 'react'
+import { FC, useState, useMemo, useCallback } from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Chapter, Round, SummaryQueueItem } from "@/store"
 import { cn } from "@/lib/utils"
@@ -11,6 +11,8 @@ import { extractBlocks } from '@/utils/content-transformation'
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { PlayIcon, PauseIcon, RefreshCwIcon } from "lucide-react"
+import { StreamingSummary } from './StreamingSummary'
+import { useIsRoundInQueue, useStreamingState, useQueueActions } from '@/store/selectors'
 
 interface ChapterTableProps {
   chapter: Chapter
@@ -42,14 +44,22 @@ export const ChapterTable: FC<ChapterTableProps> = ({
   const [selectedRound, setSelectedRound] = useState<Round | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [currentChapterIndex, setCurrentChapterIndex] = useState(chapterIndex)
+  
+  // Use optimized selectors for better performance
   const { 
-    processedContent, 
-    roundSummaryQueue, 
+    processedContent,
+    roundSummaryQueue
+  } = useStore(state => ({
+    processedContent: state.processedContent,
+    roundSummaryQueue: state.roundSummaryQueue
+  }))
+  
+  // Use queue actions from the optimized selector
+  const { 
     enqueueRoundSummary, 
     dequeueRoundSummary,
-    updateSummaryStatus,
     processRoundSummaryQueue 
-  } = useStore()
+  } = useQueueActions()
 
   // Compute local queue for just this chapter's rounds
   const chapterQueue = useMemo(() => {
@@ -60,8 +70,14 @@ export const ChapterTable: FC<ChapterTableProps> = ({
     });
   }, [roundSummaryQueue, chapter.roundsRange]);
 
-  // Get rounds for a specific chapter
-  const getChapterRounds = () => {
+  // Extract the content for a specific round from the processed content - no dependencies
+  const extractRoundContent = useCallback((content: string, round: Round): string => {
+    const lines = content.split('\n')
+    return lines.slice(round.startLine, round.endLine + 1).join('\n')
+  }, [])
+
+  // Get rounds for a specific chapter - memoize with no circular dependencies
+  const getChapterRounds = useCallback(() => {
     // Instead of using chapter.roundsRange, we need to use the current chapter's range
     if (currentChapterIndex !== chapterIndex && allChapters.length > 0) {
       const currentChapter = allChapters[currentChapterIndex];
@@ -77,10 +93,10 @@ export const ChapterTable: FC<ChapterTableProps> = ({
       round.roundIndex >= start &&
       round.roundIndex <= end
     );
-  }
+  }, [currentChapterIndex, chapterIndex, allChapters, rounds, chapter.roundsRange])
 
-  // Get rounds for a specific chapter by index
-  const getRoundsForChapter = (chapterIdx: number) => {
+  // Get rounds for a specific chapter by index - memoize with no circular dependencies
+  const getRoundsForChapter = useCallback((chapterIdx: number) => {
     if (chapterIdx < 0 || chapterIdx >= allChapters.length) return [];
 
     const targetChapter = allChapters[chapterIdx];
@@ -90,68 +106,39 @@ export const ChapterTable: FC<ChapterTableProps> = ({
       round.roundIndex >= start &&
       round.roundIndex <= end
     );
-  }
+  }, [allChapters, rounds])
 
   // Check if a round is omitted in a chapter
-  const isRoundOmitted = (roundIndex: number) => {
+  const isRoundOmitted = useCallback((roundIndex: number) => {
     if (currentChapterIndex !== chapterIndex && allChapters.length > 0) {
       // Get the omitted rounds from the current chapter instead of the original chapter
       const currentChapter = allChapters[currentChapterIndex];
       return currentChapter.omit.includes(roundIndex);
     }
     return chapter.omit.includes(roundIndex);
-  }
+  }, [currentChapterIndex, chapterIndex, allChapters, chapter.omit])
 
   // Calculate the padding length for the index based on total rounds
-  const getPaddedIndex = (index: number) => {
+  const getPaddedIndex = useCallback((index: number) => {
     const magnitude = rounds.length.toString().length + 1
     return index.toString().padStart(magnitude, '0')
-  }
+  }, [rounds.length])
 
-  // Check if a round is in the summarization queue
-  const isRoundInQueue = (roundIndex: number): SummaryQueueItem | undefined => {
-    return roundSummaryQueue.find(
-      item => item.id === roundIndex && item.type === 'round'
-    );
-  }
+  // Add a selector for checking if a round is in the queue (more optimized)
+  const isRoundInQueueSelector = useIsRoundInQueue
 
   // Add a round to the summarization queue
-  const addToQueue = (roundIndex: number) => {
+  const addToQueue = useCallback((roundIndex: number) => {
     enqueueRoundSummary(roundIndex);
-  }
+  }, [enqueueRoundSummary])
 
   // Remove a round from the summarization queue
-  const removeFromQueue = (roundIndex: number) => {
+  const removeFromQueue = useCallback((roundIndex: number) => {
     dequeueRoundSummary(roundIndex);
-  }
+  }, [dequeueRoundSummary])
 
-  // Summarize all rounds in the chapter
-  const summarizeAllRounds = () => {
-    const chapterRounds = getChapterRounds();
-    // Filter out omitted rounds
-    const eligibleRounds = chapterRounds.filter(round => !isRoundOmitted(round.roundIndex));
-    
-    // Add each eligible round to the queue
-    eligibleRounds.forEach(round => {
-      enqueueRoundSummary(round.roundIndex);
-    });
-    
-    // Start processing the queue
-    processRoundSummaryQueue();
-  }
-
-  // Get the queue statistics for this chapter
-  const getQueueStats = () => {
-    const total = chapterQueue.length;
-    const pending = chapterQueue.filter(item => item.status === 'pending').length;
-    const inProgress = chapterQueue.filter(item => item.status === 'inProgress').length;
-    const completed = chapterQueue.filter(item => item.status === 'completed').length;
-    const failed = chapterQueue.filter(item => item.status === 'failed').length;
-    
-    return { total, pending, inProgress, completed, failed };
-  }
-
-  const handleRoundClick = (round: Round) => {
+  // Memoize the round click handler
+  const handleRoundClick = useCallback((round: Round) => {
     // Create a copy of the round with rawContent added
     const roundContent = processedContent ? extractRoundContent(processedContent, round) : undefined;
 
@@ -172,22 +159,55 @@ export const ChapterTable: FC<ChapterTableProps> = ({
     }
 
     setIsDrawerOpen(true);
-  }
+  }, [processedContent, extractRoundContent])
 
-  const handleCloseDrawer = () => {
+  const handleCloseDrawer = useCallback(() => {
     setIsDrawerOpen(false)
     setSelectedRound(null)
     setCurrentChapterIndex(chapterIndex)
-  }
+  }, [chapterIndex])
 
-  // Extract the content for a specific round from the processed content
-  const extractRoundContent = (content: string, round: Round): string => {
-    const lines = content.split('\n')
-    return lines.slice(round.startLine, round.endLine + 1).join('\n')
-  }
+  // Check if there's a previous round available, including in the previous chapter
+  const hasPreviousRound = useCallback(() => {
+    if (!selectedRound) return false;
+
+    const chapterRounds = getChapterRounds();
+    const currentIndex = chapterRounds.findIndex(r => r.roundIndex === selectedRound.roundIndex);
+
+    // If not the first round in the chapter, there's a previous round
+    if (currentIndex > 0) {
+      return true;
+    }
+    // If it's the first round and not the first chapter, check if there's a previous chapter with rounds
+    else if (currentIndex === 0 && currentChapterIndex > 0) {
+      const previousChapterRounds = getRoundsForChapter(currentChapterIndex - 1);
+      return previousChapterRounds.length > 0;
+    }
+
+    return false;
+  }, [selectedRound, currentChapterIndex, getChapterRounds, getRoundsForChapter])
+
+  const hasNextRound = useCallback(() => {
+    if (!selectedRound) return false;
+
+    const chapterRounds = getChapterRounds();
+    const currentIndex = chapterRounds.findIndex(r => r.roundIndex === selectedRound.roundIndex);
+
+    // If not the last round in the chapter, there's a next round
+    if (currentIndex < chapterRounds.length - 1) {
+      return true;
+    }
+    // If it's the last round and not the last chapter, check if there's a next chapter with rounds
+    else if (currentIndex === chapterRounds.length - 1 && currentChapterIndex < allChapters.length - 1) {
+      const nextChapterRounds = getRoundsForChapter(currentChapterIndex + 1);
+      return nextChapterRounds.length > 0;
+    }
+
+    return false;
+  }, [selectedRound, currentChapterIndex, allChapters.length, getChapterRounds, getRoundsForChapter])
 
   // Navigate to the previous round, potentially crossing chapter boundaries
-  const handlePreviousRound = () => {
+  const handlePreviousRound = useCallback(() => {
     if (!selectedRound) return;
 
     const chapterRounds = getChapterRounds();
@@ -210,10 +230,9 @@ export const ChapterTable: FC<ChapterTableProps> = ({
         handleRoundClick(lastRoundOfPreviousChapter);
       }
     }
-  }
+  }, [selectedRound, currentChapterIndex, getChapterRounds, getRoundsForChapter, handleRoundClick])
 
-  // Navigate to the next round, potentially crossing chapter boundaries
-  const handleNextRound = () => {
+  const handleNextRound = useCallback(() => {
     if (!selectedRound) return;
 
     const chapterRounds = getChapterRounds();
@@ -236,51 +255,40 @@ export const ChapterTable: FC<ChapterTableProps> = ({
         handleRoundClick(firstRoundOfNextChapter);
       }
     }
-  }
+  }, [selectedRound, currentChapterIndex, allChapters.length, getChapterRounds, getRoundsForChapter, handleRoundClick])
 
-  // Check if there's a previous round available, including in the previous chapter
-  const hasPreviousRound = () => {
-    if (!selectedRound) return false;
-
+  // Summarize all rounds in the chapter
+  const summarizeAllRounds = useCallback(() => {
     const chapterRounds = getChapterRounds();
-    const currentIndex = chapterRounds.findIndex(r => r.roundIndex === selectedRound.roundIndex);
+    // Filter out omitted rounds
+    const eligibleRounds = chapterRounds.filter(round => !isRoundOmitted(round.roundIndex));
+    
+    // Add each eligible round to the queue
+    eligibleRounds.forEach(round => {
+      enqueueRoundSummary(round.roundIndex);
+    });
+    
+    // Start processing the queue
+    processRoundSummaryQueue();
+  }, [getChapterRounds, isRoundOmitted, enqueueRoundSummary, processRoundSummaryQueue]);
 
-    // If not the first round in the chapter, there's a previous round
-    if (currentIndex > 0) {
-      return true;
-    }
-    // If it's the first round and not the first chapter, check if there's a previous chapter with rounds
-    else if (currentIndex === 0 && currentChapterIndex > 0) {
-      const previousChapterRounds = getRoundsForChapter(currentChapterIndex - 1);
-      return previousChapterRounds.length > 0;
-    }
-
-    return false;
-  }
-
-  // Check if there's a next round available, including in the next chapter
-  const hasNextRound = () => {
-    if (!selectedRound) return false;
-
-    const chapterRounds = getChapterRounds();
-    const currentIndex = chapterRounds.findIndex(r => r.roundIndex === selectedRound.roundIndex);
-
-    // If not the last round in the chapter, there's a next round
-    if (currentIndex < chapterRounds.length - 1) {
-      return true;
-    }
-    // If it's the last round and not the last chapter, check if there's a next chapter with rounds
-    else if (currentIndex === chapterRounds.length - 1 && currentChapterIndex < allChapters.length - 1) {
-      const nextChapterRounds = getRoundsForChapter(currentChapterIndex + 1);
-      return nextChapterRounds.length > 0;
-    }
-
-    return false;
-  }
+  // Get the queue statistics for this chapter
+  const getQueueStats = useCallback(() => {
+    const total = chapterQueue.length;
+    const pending = chapterQueue.filter(item => item.status === 'pending').length;
+    const inProgress = chapterQueue.filter(item => item.status === 'inProgress').length;
+    const completed = chapterQueue.filter(item => item.status === 'completed').length;
+    const failed = chapterQueue.filter(item => item.status === 'failed').length;
+    
+    return { total, pending, inProgress, completed, failed };
+  }, [chapterQueue])
 
   // Queue stats for display
-  const queueStats = getQueueStats();
-  const hasQueuedRounds = queueStats.total > 0;
+  const queueStats = useMemo(() => getQueueStats(), [getQueueStats]);
+  const hasQueuedRounds = useMemo(() => queueStats.total > 0, [queueStats.total]);
+
+  // Memoize chapter rounds to avoid recalculating on every render
+  const chapterRounds = useMemo(() => getChapterRounds(), [getChapterRounds]);
 
   return (
     <>
@@ -346,10 +354,10 @@ export const ChapterTable: FC<ChapterTableProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {getChapterRounds().map((round) => {
+            {chapterRounds.map((round) => {
               const isOmitted = isRoundOmitted(round.roundIndex);
-              const queueItem = isRoundInQueue(round.roundIndex);
-              const isQueued = !!queueItem;
+              const queueItem = isRoundInQueueSelector(round.roundIndex);
+              const isQueued = queueItem.inQueue;
               
               return (
                 <TableRow
@@ -358,14 +366,14 @@ export const ChapterTable: FC<ChapterTableProps> = ({
                     "py-1",
                     isOmitted && "opacity-50 bg-muted/50 text-muted-foreground line-through",
                     !isOmitted && "cursor-pointer hover:bg-muted/50",
-                    isQueued && queueItem.status === 'inProgress' && "bg-blue-50",
-                    isQueued && queueItem.status === 'completed' && "bg-green-50",
-                    isQueued && queueItem.status === 'failed' && "bg-red-50"
+                    isQueued && queueItem.isProcessing && "bg-blue-50",
+                    round.summaryStatus === 'completed' && "bg-green-50",
+                    round.summaryStatus === 'failed' && "bg-red-50"
                   )}
                   onClick={() => !isOmitted && handleRoundClick(round)}
                 >
                   <TableCell className="py-1 px-1">
-                    <StatusBadge status={round.summaryStatus} />
+                    <StatusBadge status={isQueued && queueItem.isProcessing ? 'inProgress' : round.summaryStatus} />
                   </TableCell>
                   <TableCell className="font-mono text-xs font-extralight text-muted-foreground py-1 px-2">
                     {getPaddedIndex(round.roundIndex)}
@@ -378,24 +386,12 @@ export const ChapterTable: FC<ChapterTableProps> = ({
                       <span className="italic">Omitted from summarization</span>
                     ) : (
                       <div className="flex items-center space-x-2">
-                        <span className="truncate">{round.summary || "No summary available"}</span>
-                        {isQueued && (
-                          <Badge 
-                            variant="outline" 
-                            className={cn(
-                              "text-xs ml-1",
-                              queueItem.status === 'pending' && "bg-yellow-50 text-yellow-800",
-                              queueItem.status === 'inProgress' && "bg-blue-50 text-blue-800", 
-                              queueItem.status === 'completed' && "bg-green-50 text-green-800",
-                              queueItem.status === 'failed' && "bg-red-50 text-red-800"
-                            )}
-                          >
-                            {queueItem.status === 'pending' && "Queued"}
-                            {queueItem.status === 'inProgress' && "Processing"}
-                            {queueItem.status === 'completed' && "Processed"}
-                            {queueItem.status === 'failed' && "Failed"}
-                          </Badge>
-                        )}
+                        <StreamingSummary 
+                          roundIndex={round.roundIndex}
+                          className="truncate" 
+                          fallbackText="No summary available"
+                          useErrorBoundary={false}
+                        />
                       </div>
                     )}
                   </TableCell>
@@ -453,22 +449,26 @@ export const ChapterTable: FC<ChapterTableProps> = ({
           </TableBody>
         </Table>
       </ScrollArea>
-      <RoundDetailsDrawer
-        round={selectedRound}
-        open={isDrawerOpen}
-        onClose={handleCloseDrawer}
-        onReroll={onReroll}
-        onSlideUp={onSlideUp}
-        onSlideDown={onSlideDown}
-        onSplit={onSplit}
-        onOmit={onOmit}
-        chapterIndex={currentChapterIndex}
-        isFirstChapter={currentChapterIndex === 0}
-        isLastChapter={currentChapterIndex === allChapters.length - 1}
-        isOmitted={selectedRound ? isRoundOmitted(selectedRound.roundIndex) : false}
-        onPrevious={hasPreviousRound() ? handlePreviousRound : undefined}
-        onNext={hasNextRound() ? handleNextRound : undefined}
-      />
+      
+      {/* Only render the RoundDetailsDrawer when it's needed */}
+      {isDrawerOpen && selectedRound && (
+        <RoundDetailsDrawer
+          round={selectedRound}
+          open={isDrawerOpen}
+          onClose={handleCloseDrawer}
+          onReroll={onReroll}
+          onSlideUp={onSlideUp}
+          onSlideDown={onSlideDown}
+          onSplit={onSplit}
+          onOmit={onOmit}
+          chapterIndex={currentChapterIndex}
+          isFirstChapter={currentChapterIndex === 0}
+          isLastChapter={currentChapterIndex === allChapters.length - 1}
+          isOmitted={selectedRound ? isRoundOmitted(selectedRound.roundIndex) : false}
+          onPrevious={hasPreviousRound() ? handlePreviousRound : undefined}
+          onNext={hasNextRound() ? handleNextRound : undefined}
+        />
+      )}
     </>
   )
 } 

@@ -1,6 +1,9 @@
-import { useStore } from '../store'
 import { cva } from 'class-variance-authority'
 import { cn } from "@/lib/utils"
+// Replace direct store usage with optimized selectors
+import { useStreamingState } from '@/store/selectors'
+import { useStore } from '@/store'
+import { SummaryQueueItem } from '@/store'
 
 interface QueuePanelProps {
   setActiveView: (view: any) => void
@@ -43,14 +46,22 @@ const queueCard = cva("p-3 rounded border flex justify-between items-center", {
   }
 })
 
-export function QueuePanel({ setActiveView }: QueuePanelProps) {
-  const { roundSummaryQueue, rounds } = useStore()
+// Create a component for displaying streaming text in the queue
+const QueueItemSummary = ({ roundId }: { roundId: number }) => {
+  // Use the streaming state hook to get the current text
+  const { text } = useStreamingState(roundId)
+  
+  // Use the streaming state for real-time updates
+  return (
+    <div className="text-xs text-muted-foreground truncate max-w-[16rem]">
+      {text || "No summary available"}
+    </div>
+  )
+}
 
-  // Get round info with summary for display
-  const getRoundSummary = (roundId: number) => {
-    const round = rounds.find(r => r.roundIndex === roundId)
-    return round?.summary || "No summary available"
-  }
+export function QueuePanel({ setActiveView }: QueuePanelProps) {
+  // Use optimized store access with selectors
+  const roundSummaryQueue = useStore(state => state.roundSummaryQueue)
 
   return (
     <div>
@@ -69,7 +80,7 @@ export function QueuePanel({ setActiveView }: QueuePanelProps) {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3">
-          {roundSummaryQueue.slice(0, 6).map((item, index) => (
+          {roundSummaryQueue.slice(0, 6).map((item: SummaryQueueItem, index: number) => (
             <div 
               key={item.id} 
               className={cn(queueCard({
@@ -86,9 +97,8 @@ export function QueuePanel({ setActiveView }: QueuePanelProps) {
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-muted-foreground truncate max-w-[16rem]">
-                  {getRoundSummary(item.id)}
-                </div>
+                {/* Replace direct summary reference with our optimized component */}
+                <QueueItemSummary roundId={item.id} />
                 <div className="text-xs font-medium mt-1">
                   {item.status === 'inProgress' 
                     ? "Processing..." 

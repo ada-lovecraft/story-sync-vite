@@ -3,8 +3,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Chapter, Round, SummaryQueueItem } from "@/store"
 import { ChapterTable } from './ChapterTable'
 import { ChapterHeader } from './ChapterHeader'
-import { useStore } from "@/store"
 import { toast } from "sonner"
+// Import optimized selectors and actions
+import { useQueueActions, useChapterRounds } from '@/store/selectors'
 
 interface ChapterCardProps {
   chapter: Chapter
@@ -35,7 +36,12 @@ export const ChapterCard: FC<ChapterCardProps> = ({
   roundSummaryQueue = [],
   allChapters = []
 }) => {
-  const { enqueueRoundSummary, processRoundSummaryQueue } = useStore()
+  // Use optimized queue actions instead of direct store access
+  const { enqueueRoundSummary, processRoundSummaryQueue } = useQueueActions()
+  
+  // Use the optimized chapter rounds selector if we're not using the passed rounds
+  // const chapterRounds = useChapterRounds(chapterIndex)
+  // Note: We're still using the passed rounds prop for now to maintain compatibility
 
   const summarizeAllRounds = async () => {
     // Get rounds in this chapter
